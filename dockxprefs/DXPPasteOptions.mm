@@ -16,7 +16,7 @@ static NSBundle *tweakBundle;
         [snippetEntrySpecifiers addObject:safariSpecGroup];
         
         
-        PSSpecifier *pasteAndGoTypeSpec = [PSSpecifier preferenceSpecifierNamed:@"Paste and Go" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSegmentCell edit:nil];
+        PSSpecifier *pasteAndGoTypeSpec = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"PASTE_AND_GO") target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSegmentCell edit:nil];
         [pasteAndGoTypeSpec setValues:@[@(0), @(1), @(2)] titles:@[LOCALIZED(@"PASTE_AND_GO_DISABLED"), LOCALIZED(@"PASTE_AND_GO_URL_ONLY"), LOCALIZED(@"PASTE_AND_GO_EVERYTHING")]];
         [pasteAndGoTypeSpec setProperty:@2 forKey:@"default"];
         [pasteAndGoTypeSpec setProperty:@"pasteandgo" forKey:@"key"];

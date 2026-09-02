@@ -25,15 +25,16 @@
         
         
         if (!prefs){
-            //dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            //prefs = [[[DXPrefsManager sharedInstance] readPrefsFromSandbox:!isSpringBoard] mutableCopy];
-            prefs = [NSMutableDictionary dictionaryWithContentsOfFile:kPrefsPath];
-            //});
+            prefs = [[[DXPrefsManager sharedInstance] readPrefsFromSandbox:!isSpringBoard] mutableCopy];
         }
         
         
         
-        if (prefs[kCachekey]){
+        // A cache is only safe when the user has never customized either
+        // shortcut order or keyboard types.  On iOS 17 the collection view can
+        // outlive the Settings controller, so a stale cache otherwise masks the
+        // newly written configuration.
+        if (prefs[kCachekey] && !prefs[kShortcutskey] && !prefs[kKeyboardTypekey]){
             NSDictionary *cache = prefs[kCachekey];
             self.shortcuts = cache[@"shortcuts"];
             self.fullshortcuts = cache[@"fullshortcuts"];
@@ -581,6 +582,85 @@
         }
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), self.autoPaginationDispatchBlock);
     }
+}
+
+-(void)reloadShortcutConfiguration{
+    NSDictionary *currentPrefs = [[DXPrefsManager sharedInstance] readPrefsFromSandbox:!isSpringBoard];
+    if (![currentPrefs isKindOfClass:[NSDictionary class]]) currentPrefs = @{};
+    prefs = [currentPrefs mutableCopy];
+
+    NSMutableArray *defaultImages12 = [[self.shortcutsGenerator imageNameArrayForiOS:0] mutableCopy];
+    NSMutableArray *defaultImages13 = [[self.shortcutsGenerator imageNameArrayForiOS:1] mutableCopy];
+    NSMutableArray *defaultSelectors = [[self.shortcutsGenerator selectorNameForLongPress:NO] mutableCopy];
+    NSMutableArray *defaultSelectorsLP = [[self.shortcutsGenerator selectorNameForLongPress:YES] mutableCopy];
+
+    NSMutableArray *images12 = [NSMutableArray array];
+    NSMutableArray *images13 = [NSMutableArray array];
+    NSMutableArray *selectors = [NSMutableArray array];
+    NSMutableArray *selectorsLP = [NSMutableArray array];
+    NSArray *configuredShortcuts = currentPrefs[kShortcutskey];
+
+    if ([configuredShortcuts isKindOfClass:[NSArray class]] && configuredShortcuts.count > 0) {
+        for (NSDictionary *item in configuredShortcuts[0]) {
+            if (![item isKindOfClass:[NSDictionary class]]) continue;
+            NSString *selector = item[@"selector"];
+            if ([selector isEqualToString:@"copyLogAction:"] && !self.shortcutsGenerator.copyLogDylibExist) continue;
+            if ([selector isEqualToString:@"translomaticAction:"] && !self.shortcutsGenerator.translomaticDylibExist) continue;
+            if ([selector isEqualToString:@"wasabiAction:"] && !self.shortcutsGenerator.wasabiDylibExist) continue;
+            if ([selector isEqualToString:@"pasitheaAction:"] && !self.shortcutsGenerator.pasitheaDylibExist) continue;
+            if ([selector isEqualToString:@"copypastaAction:"] && !self.shortcutsGenerator.copypastaDylibExist) continue;
+            if ([selector isEqualToString:@"loupeAction:"] && !self.shortcutsGenerator.loupeDylibExist) continue;
+            if ([selector isEqualToString:@"tranzloAction:"] && !self.shortcutsGenerator.tranzloDylibExist) continue;
+            if (item[@"images12"] && item[@"images13"] && selector) {
+                [images12 addObject:item[@"images12"]];
+                [images13 addObject:item[@"images13"]];
+                [selectors addObject:selector];
+                [selectorsLP addObject:item[@"selectorlp"] ?: @""];
+            }
+        }
+    } else {
+        NSUInteger count = MIN((NSUInteger)maxdefaultshortcuts,
+                               MIN(defaultImages12.count,
+                                   MIN(defaultImages13.count,
+                                       MIN(defaultSelectors.count, defaultSelectorsLP.count))));
+        for (NSUInteger index = 0; index < count; index++) {
+            [images12 addObject:defaultImages12[index]];
+            [images13 addObject:defaultImages13[index]];
+            [selectors addObject:defaultSelectors[index]];
+            [selectorsLP addObject:defaultSelectorsLP[index]];
+        }
+    }
+
+    self.shortcuts = @[images12, images13, selectors, selectorsLP];
+    self.fullshortcuts = @[defaultImages12, defaultImages13, defaultSelectors, defaultSelectorsLP];
+
+    self.keyboardTypeDataFull = [self.shortcutsGenerator keyboardTypeData];
+    self.keyboardTypeLabelFull = [self.shortcutsGenerator keyboardTypeLabel];
+    NSMutableArray *activeKeyboardTypes = [NSMutableArray array];
+    NSMutableArray *activeKeyboardLabels = [NSMutableArray array];
+    NSArray *configuredKeyboardTypes = currentPrefs[kKeyboardTypekey];
+    if ([configuredKeyboardTypes isKindOfClass:[NSArray class]] && configuredKeyboardTypes.count > 0) {
+        for (NSDictionary *item in configuredKeyboardTypes[0]) {
+            NSNumber *data = item[@"data"];
+            NSUInteger index = [self.keyboardTypeDataFull indexOfObject:data];
+            if (data && index != NSNotFound) {
+                [activeKeyboardTypes addObject:data];
+                [activeKeyboardLabels addObject:self.keyboardTypeLabelFull[index]];
+            }
+        }
+    }
+    if (activeKeyboardTypes.count == 0) {
+        NSUInteger count = MIN((NSUInteger)maxdefaultshortcutskbtype, self.keyboardTypeDataFull.count);
+        for (NSUInteger index = 0; index < count; index++) {
+            [activeKeyboardTypes addObject:self.keyboardTypeDataFull[index]];
+            [activeKeyboardLabels addObject:self.keyboardTypeLabelFull[index]];
+        }
+    }
+    self.kbType = activeKeyboardTypes;
+    self.kbTypeLabel = activeKeyboardLabels;
+    self.indexArray = nil;
+    self.sectionOffsetForwardArray = nil;
+    self.sectionOffsetBackwardArray = nil;
 }
 
 

@@ -27,7 +27,7 @@ static NSBundle *tweakBundle;
         [snippetEntrySpecifiers addObject:selectionTypeGroup];
         
         
-        PSSpecifier *selectionType = [PSSpecifier preferenceSpecifierNamed:@"selectionType" target:self set:@selector(setValue:specifier:) get:@selector(readValue:) detail:nil cell:PSSegmentCell edit:nil];
+        PSSpecifier *selectionType = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"SELECTION_TYPE") target:self set:@selector(setValue:specifier:) get:@selector(readValue:) detail:nil cell:PSSegmentCell edit:nil];
         [selectionType setValues:@[@(0), @(1)] titles:selectionArray];
         [selectionType setProperty:@"0" forKey:@"default"];
         [selectionType setProperty:@"type" forKey:@"key"];

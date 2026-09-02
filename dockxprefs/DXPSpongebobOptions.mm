@@ -16,7 +16,7 @@ static NSBundle *tweakBundle;
         [snippetEntrySpecifiers addObject:spongebobTextSpecGroup];
         
         
-        PSSpecifier *spongebobEntropyTypeSpec = [PSSpecifier preferenceSpecifierNamed:@"Spongebob Entropy" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSegmentCell edit:nil];
+        PSSpecifier *spongebobEntropyTypeSpec = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"SPONGEBOB_ENTROPY") target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSegmentCell edit:nil];
         [spongebobEntropyTypeSpec setValues:@[@(DXStudlyCapsTypeRandom), @(DXStudlyCapsTypeAlternate), @(DXStudlyCapsTypeVowel), @(DXStudlyCapsTypeConsonent)] titles:@[LOCALIZED(@"SPONGEBOB_RANDOM"), LOCALIZED(@"SPONGEBOB_ALTERNATE"), LOCALIZED(@"SPONGEBOB_VOWEL"), LOCALIZED(@"SPONGEBOB_CONSONENT")]];
         [spongebobEntropyTypeSpec setProperty:@(DXStudlyCapsTypeRandom) forKey:@"default"];
         [spongebobEntropyTypeSpec setProperty:kSpongebobEntropyKey forKey:@"key"];

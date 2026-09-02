@@ -611,6 +611,11 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
             //});
         }
         
+    }else{
+        // The dock view is not recreated when the main preference is disabled.
+        // Explicitly restore the stock bar on iOS 17.
+        self.dockx.hidden = YES;
+        if ([self respondsToSelector:@selector(barmoji)]) self.barmoji.hidden = NO;
     }
 }
 /*
@@ -1006,6 +1011,9 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
         if (UIInterfaceOrientationIsLandscape(orientation)){
             self.dockView.dockx.hidden = YES;
         }
+    }else if (self.dockView.dockx){
+        self.dockView.dockx.hidden = YES;
+        if ([self.dockView respondsToSelector:@selector(barmoji)]) self.dockView.barmoji.hidden = NO;
     }
 }
 
@@ -1029,11 +1037,15 @@ static void updateLoupe() {
     [[NSNotificationCenter defaultCenter] postNotificationName:@"updateLoupe" object:nil];
 }
 
-static void reloadPrefs() {
+static void reloadPrefs(void) {
     prefs = [[[DXPrefsManager sharedInstance] readPrefsFromSandbox:!isSpringBoard] mutableCopy];
     
     if (!firstInit){
-        [[DXPrefsManager sharedInstance] removeKey:kCachekey fromSandbox:!isSpringBoard];
+        // Cache invalidation is an internal maintenance operation.  Do not post
+        // kPrefsChangedIdentifier here: this function is itself the observer for
+        // that notification, and posting synchronously causes unbounded re-entry
+        // (and a SpringBoard SIGSEGV) when the user toggles the main switch.
+        [[DXPrefsManager sharedInstance] removeKey:kCachekey notify:NO];
     }else{
         if (isSpringBoard){
             dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -1111,6 +1123,20 @@ static void reloadPrefs() {
     isPagingEnabled =  preferencesBool(kPagingkey, YES);
     shouldPerformBatchUpdate = NO;
     spongebobEntropy = (DXStudlyCapsType)preferencesInt(kSpongebobEntropyKey, DXStudlyCapsTypeRandom);
+
+    // Settings changes arrive while the keyboard dock is still alive.  Refresh
+    // its data source and visibility explicitly; iOS 17 no longer recreates the
+    // dock view for every preferences update.
+    BOOL enabled = preferencesBool(kEnabledkey, YES);
+    if (dockView.dockx) {
+        [dockView.dockx reloadShortcutConfiguration];
+        dockView.dockx.hidden = !enabled || !toggledOn || isLandscape || isDictating;
+        if ([dockView respondsToSelector:@selector(barmoji)]) {
+            dockView.barmoji.hidden = enabled && toggledOn && !isLandscape && !isDictating;
+        }
+        [dockView.dockx.collectionViewLayout invalidateLayout];
+        [dockView.dockx reloadData];
+    }
     /*
      if (dockView){
      [UIView performWithoutAnimation:^{
@@ -1131,6 +1157,19 @@ static void reloadPrefs() {
      */
     
     
+}
+
+static void reloadPrefsNotificationCallback(CFNotificationCenterRef center,
+                                             void *observer,
+                                             CFStringRef name,
+                                             const void *object,
+                                             CFDictionaryRef userInfo) {
+    // Darwin notifications may arrive while Settings is still unwinding the
+    // preference write.  Always refresh on the process main queue so UIKit state
+    // and the DockX view are updated serially and never from the posting thread.
+    dispatch_async(dispatch_get_main_queue(), ^{
+        reloadPrefs();
+    });
 }
 
 static void sbDidLaunch(){
@@ -1164,7 +1203,7 @@ static void sbDidLaunch(){
                     shouldUpdateTrueKBType = YES;
                     shouldPerformBatchUpdate = YES;
                     %init(DockX);
-                    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)reloadPrefs, (CFStringRef)kPrefsChangedIdentifier, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
+                    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, reloadPrefsNotificationCallback, (CFStringRef)kPrefsChangedIdentifier, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
                     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)updateAutoCorrection, (CFStringRef)kAutoCorrectionChangedIdentifier, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
                     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)updateAutoCapitalization, (CFStringRef)kAutoCapitalizationChangedIdentifier, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
                     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)updateLoupe, (CFStringRef)kLoupeChangedIdentifier, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);

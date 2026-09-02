@@ -98,7 +98,7 @@ static NSBundle *tweakBundle;
     //self.addSnippetBtn.tintColor = [UIColor blackColor];
     self.navigationItem.rightBarButtonItem = self.respringBtn;
     
-    NSDictionary *preferences = [NSDictionary dictionaryWithContentsOfFile:kPrefsPath];
+    NSDictionary *preferences = [[DXPrefsManager sharedInstance] readPrefs];
     if(![preferences[@"toastBOOL"] boolValue]) {
         [(PSSpecifier *)self.dynamicSpecifiers[@"pyslider"] setProperty:@NO forKey:@"enabled"];
         [(PSSpecifier *)self.dynamicSpecifiers[@"timerslider"] setProperty:@NO forKey:@"enabled"];
@@ -119,9 +119,12 @@ static NSBundle *tweakBundle;
 }
 
 -(id)readPreferenceValue:(PSSpecifier*)specifier{
-    
-    id value = [super readPreferenceValue:specifier];
     NSString *key = [specifier propertyForKey:@"key"];
+    id value = [super readPreferenceValue:specifier];
+    if ([key isEqualToString:kEnabledkey]) {
+        id storedValue = [[DXPrefsManager sharedInstance] readPrefs][key];
+        if (storedValue != nil) value = storedValue;
+    }
     if([key isEqualToString:@"toastBOOL"]) {
         [(PSSpecifier *)self.dynamicSpecifiers[@"pyslider"] setProperty:value forKey:@"enabled"];
         [(PSSpecifier *)self.dynamicSpecifiers[@"timerslider"] setProperty:value forKey:@"enabled"];
@@ -166,8 +169,15 @@ static NSBundle *tweakBundle;
 
 
 - (void)setPreferenceValue:(id)value specifier:(PSSpecifier *)specifier{
-    [super setPreferenceValue:value specifier:specifier];
     NSString *key = [specifier propertyForKey:@"key"];
+    if ([key isEqualToString:kEnabledkey]) {
+        // PSSwitchCell on iOS 17 can return its plist default while the
+        // preference daemon is still synchronizing.  Write through the same
+        // manager used by SpringBoard so the value is immediately observable.
+        [[DXPrefsManager sharedInstance] setValue:value forKey:key];
+    } else {
+        [super setPreferenceValue:value specifier:specifier];
+    }
     if([key isEqualToString:@"toastBOOL"]) {
         [(PSSpecifier *)self.dynamicSpecifiers[@"pyslider"] setProperty:value forKey:@"enabled"];
         [(PSSpecifier *)self.dynamicSpecifiers[@"timerslider"] setProperty:value forKey:@"enabled"];

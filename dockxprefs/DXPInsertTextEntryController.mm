@@ -17,7 +17,7 @@ static NSBundle *tweakBundle;
         [snippetEntrySpecifiers addObject:singleTapGroup];
         
         
-        PSSpecifier *insertType = [PSSpecifier preferenceSpecifierNamed:@"insertType" target:self set:@selector(setValue:specifier:) get:@selector(readValue:) detail:nil cell:PSSegmentCell edit:nil];
+        PSSpecifier *insertType = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"INSERT_TYPE") target:self set:@selector(setValue:specifier:) get:@selector(readValue:) detail:nil cell:PSSegmentCell edit:nil];
         [insertType setValues:@[@(0), @(1), @(2), @(3), @(4) , @(5)] titles:@[LOCALIZED(@"TEXT"), LOCALIZED(@"ABBREV_SHORT_DATE"), LOCALIZED(@"ABBREV_MEDIUM_DATE"), LOCALIZED(@"ABBREV_SHORT_TIME"), LOCALIZED(@"ABBREV_MEDIUM_TIME"), LOCALIZED(@"ABBREV_FULL_DATE")]];
         [insertType setProperty:@"0" forKey:@"default"];
         [insertType setProperty:@"type" forKey:@"key"];
@@ -42,7 +42,7 @@ static NSBundle *tweakBundle;
         [longPressGroup setProperty:LOCALIZED(@"FOOTER_LONG_PRESS") forKey:@"footerText"];
         [snippetEntrySpecifiers addObject:longPressGroup];
         
-        PSSpecifier *insertTypeLP = [PSSpecifier preferenceSpecifierNamed:@"insertType" target:self set:@selector(setValue:specifier:) get:@selector(readValue:) detail:nil cell:PSSegmentCell edit:nil];
+        PSSpecifier *insertTypeLP = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"INSERT_TYPE") target:self set:@selector(setValue:specifier:) get:@selector(readValue:) detail:nil cell:PSSegmentCell edit:nil];
         [insertTypeLP setValues:@[@(0), @(1), @(2), @(3), @(4) , @(5)] titles:@[LOCALIZED(@"TEXT"), LOCALIZED(@"ABBREV_SHORT_DATE"), LOCALIZED(@"ABBREV_MEDIUM_DATE"), LOCALIZED(@"ABBREV_SHORT_TIME"), LOCALIZED(@"ABBREV_MEDIUM_TIME"), LOCALIZED(@"ABBREV_FULL_DATE")]];
         [insertTypeLP setProperty:@"0" forKey:@"default"];
         [insertTypeLP setProperty:@"typeLP" forKey:@"key"];

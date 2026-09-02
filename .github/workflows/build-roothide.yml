@@ -1,0 +1,137 @@
+name: Build DockX RootHide
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: dockx-roothide-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.ios }} RootHide package
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The iOS 17 package intentionally uses the iOS 16.5 SDK. This is
+          # the same ABI combination validated on the iOS 17.1.2 device.
+          - ios: ios16
+            sdk: '16.5'
+          - ios: ios17
+            sdk: '16.5'
+
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup RootHide Theos
+        uses: waruhachi/theos-action@v2.4.6
+        with:
+          theos-src: roothide/theos
+          sdks-src: xybp888/iOS-SDKs
+
+      - name: Verify toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${THEOS}"
+          test -d "${THEOS}/sdks/iPhoneOS${{ matrix.sdk }}.sdk"
+          test -x "${THEOS}/bin/ldid" || command -v ldid
+          xcodebuild -version
+          make --version | head -n 1
+          bash -n build.sh
+          echo "Using THEOS=${THEOS}"
+
+      - name: Build package
+        shell: bash
+        env:
+          THEOS_PACKAGE_SCHEME: roothide
+        run: |
+          set -euo pipefail
+          ./build.sh "${{ matrix.ios }}"
+
+      - name: Verify package
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          packages=(packages/${{ matrix.ios }}/*.deb)
+          if (( ${#packages[@]} != 1 )); then
+            echo "Expected exactly one ${{ matrix.ios }} package, found ${#packages[@]}." >&2
+            exit 1
+          fi
+          package="${packages[0]}"
+          test -s "$package"
+          file "$package"
+          echo "Package: $package"
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: dockx-roothide-${{ matrix.ios }}
+          path: packages/${{ matrix.ios }}/*.deb
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Prepare release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          packages=(release-assets/*/*.deb)
+          if (( ${#packages[@]} != 2 )); then
+            echo "Expected two Debian packages, found ${#packages[@]}." >&2
+            exit 1
+          fi
+          for package in "${packages[@]}"; do
+            artifact_name="$(basename "$(dirname "$package")")"
+            package_name="$(basename "$package")"
+            cp "$package" "release-assets/${artifact_name}-${package_name}"
+          done
+          ls -l release-assets/*.deb
+
+      - name: Create or update GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          assets=(release-assets/*.deb)
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "${assets[@]}" --clobber
+          else
+            gh release create "$tag" "${assets[@]}" \
+              --title "DockX $tag" \
+              --generate-notes
+          fi

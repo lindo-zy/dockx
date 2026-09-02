@@ -63,7 +63,7 @@ static NSBundle *tweakBundle;
         [spacingSpecGroup setProperty:LOCALIZED(@"FOOTER_SPACING") forKey:@"footerText"];
         [snippetEntrySpecifiers addObject:spacingSpecGroup];
         
-        PSSpecifier *spacingSpec = [PSSpecifier preferenceSpecifierNamed:@"Spacing" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
+        PSSpecifier *spacingSpec = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"SPACING") target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
         [spacingSpec setProperty:kCellSpacingkey forKey:@"key"];
         [spacingSpec setProperty:@0 forKey:@"min"];
         [spacingSpec setProperty:@100 forKey:@"max"];
@@ -80,7 +80,7 @@ static NSBundle *tweakBundle;
         [shortcutsHeightSpecGroup setProperty:LOCALIZED(@"FOOTER_HEIGHT") forKey:@"footerText"];
         [snippetEntrySpecifiers addObject:shortcutsHeightSpecGroup];
         
-        PSSpecifier *shortcutsHeightSpec = [PSSpecifier preferenceSpecifierNamed:@"Height" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
+        PSSpecifier *shortcutsHeightSpec = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"HEIGHT") target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
         [shortcutsHeightSpec setProperty:kCellHeightkey forKey:@"key"];
         [shortcutsHeightSpec setProperty:@0 forKey:@"min"];
         [shortcutsHeightSpec setProperty:@100 forKey:@"max"];
@@ -98,7 +98,7 @@ static NSBundle *tweakBundle;
         [shortcutsRadiusSpecGroup setProperty:LOCALIZED(@"FOOTER_RADIUS") forKey:@"footerText"];
         [snippetEntrySpecifiers addObject:shortcutsRadiusSpecGroup];
         
-        PSSpecifier *shortcutsRadiusSpec = [PSSpecifier preferenceSpecifierNamed:@"Radius" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
+        PSSpecifier *shortcutsRadiusSpec = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"RADIUS") target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
         [shortcutsRadiusSpec setProperty:kCellRadiuskey forKey:@"key"];
         [shortcutsRadiusSpec setProperty:@0 forKey:@"min"];
         [shortcutsRadiusSpec setProperty:@100 forKey:@"max"];
@@ -118,7 +118,7 @@ static NSBundle *tweakBundle;
         [snippetEntrySpecifiers addObject:leadingOffsetSpecGroup];
         
         
-        PSSpecifier *leadingOffsetSpec = [PSSpecifier preferenceSpecifierNamed:@"Leading" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
+        PSSpecifier *leadingOffsetSpec = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"LEADING") target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
         [leadingOffsetSpec setProperty:kLeadinfOffsetkey forKey:@"key"];
         [leadingOffsetSpec setProperty:@-200 forKey:@"min"];
         [leadingOffsetSpec setProperty:@200 forKey:@"max"];
@@ -135,7 +135,7 @@ static NSBundle *tweakBundle;
         [trailingOffsetSpecGroup setProperty:LOCALIZED(@"FOOTER_OFFSETS_TRAILING") forKey:@"footerText"];
         [snippetEntrySpecifiers addObject:trailingOffsetSpecGroup];
         
-        PSSpecifier *trailingOffsetSpec = [PSSpecifier preferenceSpecifierNamed:@"Trailing" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
+        PSSpecifier *trailingOffsetSpec = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"TRAILING") target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
         [trailingOffsetSpec setProperty:kTrailingOffsetkey forKey:@"key"];
         [trailingOffsetSpec setProperty:@-200 forKey:@"min"];
         [trailingOffsetSpec setProperty:@200 forKey:@"max"];
@@ -152,7 +152,7 @@ static NSBundle *tweakBundle;
         [heightOffsetSpecGroup setProperty:LOCALIZED(@"FOOTER_HEIGHT") forKey:@"footerText"];
         [snippetEntrySpecifiers addObject:heightOffsetSpecGroup];
         
-        PSSpecifier *heightOffsetSpec = [PSSpecifier preferenceSpecifierNamed:@"Left Offset" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
+        PSSpecifier *heightOffsetSpec = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"LEFT_OFFSET") target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
         [heightOffsetSpec setProperty:kHeightOffsetkey forKey:@"key"];
         [heightOffsetSpec setProperty:@-200 forKey:@"min"];
         [heightOffsetSpec setProperty:@200 forKey:@"max"];
@@ -169,7 +169,7 @@ static NSBundle *tweakBundle;
         [bottomOffsetSpecGroup setProperty:LOCALIZED(@"FOOTER_OFFSETS_BOTTOM") forKey:@"footerText"];
         [snippetEntrySpecifiers addObject:bottomOffsetSpecGroup];
         
-        PSSpecifier *bottomOffsetSpec = [PSSpecifier preferenceSpecifierNamed:@"Bottom Offset" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
+        PSSpecifier *bottomOffsetSpec = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"BOTTOM_OFFSET") target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
         [bottomOffsetSpec setProperty:kBottomOffsetkey forKey:@"key"];
         [bottomOffsetSpec setProperty:@-200 forKey:@"min"];
         [bottomOffsetSpec setProperty:@200 forKey:@"max"];
@@ -197,7 +197,7 @@ static NSBundle *tweakBundle;
         [snippetEntrySpecifiers addObject:topInsetSpecGroup];
         
         
-        PSSpecifier *topInsetSpec = [PSSpecifier preferenceSpecifierNamed:@"Top Inset" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
+        PSSpecifier *topInsetSpec = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"TOP_INSET") target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
         [topInsetSpec setProperty:@"topinset" forKey:@"key"];
         [topInsetSpec setProperty:@-200 forKey:@"min"];
         [topInsetSpec setProperty:@200 forKey:@"max"];
@@ -214,7 +214,7 @@ static NSBundle *tweakBundle;
         [bottomInsetSpecGroup setProperty:LOCALIZED(@"FOOTER_INSETS_BOTTOM") forKey:@"footerText"];
         [snippetEntrySpecifiers addObject:bottomInsetSpecGroup];
         
-        PSSpecifier *bottomInsetSpec = [PSSpecifier preferenceSpecifierNamed:@"Bottom Inset" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
+        PSSpecifier *bottomInsetSpec = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"BOTTOM_INSET") target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
         [bottomInsetSpec setProperty:@"bottominset" forKey:@"key"];
         [bottomInsetSpec setProperty:@-200 forKey:@"min"];
         [bottomInsetSpec setProperty:@200 forKey:@"max"];
@@ -231,7 +231,7 @@ static NSBundle *tweakBundle;
         [leftInsetSpecGroup setProperty:LOCALIZED(@"FOOTER_INSETS_LEFT") forKey:@"footerText"];
         [snippetEntrySpecifiers addObject:leftInsetSpecGroup];
         
-        PSSpecifier *leftInsetSpec = [PSSpecifier preferenceSpecifierNamed:@"Left Inset" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
+        PSSpecifier *leftInsetSpec = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"LEFT_INSET") target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
         [leftInsetSpec setProperty:@"leftinset" forKey:@"key"];
         [leftInsetSpec setProperty:@-200 forKey:@"min"];
         [leftInsetSpec setProperty:@200 forKey:@"max"];
@@ -248,7 +248,7 @@ static NSBundle *tweakBundle;
         [rightInsetSpecGroup setProperty:LOCALIZED(@"FOOTER_INSETS_RIGHT") forKey:@"footerText"];
         [snippetEntrySpecifiers addObject:rightInsetSpecGroup];
         
-        PSSpecifier *rightInsetSpec = [PSSpecifier preferenceSpecifierNamed:@"Right Inset" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
+        PSSpecifier *rightInsetSpec = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"RIGHT_INSET") target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSliderCell edit:nil];
         [rightInsetSpec setProperty:@"rightinset" forKey:@"key"];
         [rightInsetSpec setProperty:@-200 forKey:@"min"];
         [rightInsetSpec setProperty:@200 forKey:@"max"];

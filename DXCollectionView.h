@@ -52,6 +52,11 @@ typedef NS_ENUM(NSInteger, direction) {
 @property (strong, nonatomic) NSArray *keyboardTypeLabelFull;
 @property (strong, nonatomic) DXShortcutsGenerator *shortcutsGenerator;
 
+/// Rebuilds the active shortcut/keyboard-type data from the current preference domain.
+/// iOS 17 keeps the collection view alive while Settings writes preferences, so
+/// invalidating only the on-disk cache is not sufficient.
+-(void)reloadShortcutConfiguration;
+
 -(void)shakeButton:(UIButton *)sender;
 -(void)shakeView:(UIView *)sender;
 -(IBAction)selectAllAction:(UIButton*)sender;

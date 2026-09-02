@@ -44,6 +44,24 @@ static void reloadPrefs(CFNotificationCenterRef center, void *observer, CFString
 }
 
 - (NSDictionary *)readPrefs {
+    CFStringRef appID = (CFStringRef)kIdentifier;
+    CFPreferencesAppSynchronize(appID);
+
+    CFArrayRef keyList = CFPreferencesCopyKeyList(appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+    NSDictionary *preferences = nil;
+    if (keyList) {
+        preferences = CFBridgingRelease(CFPreferencesCopyMultiple(keyList, appID,
+                                                                   kCFPreferencesCurrentUser,
+                                                                   kCFPreferencesAnyHost));
+        CFRelease(keyList);
+    }
+
+    // PreferenceLoader/cfprefsd is the source of truth on iOS 17.  Keep the
+    // plist fallback for old installs and for the short window before the
+    // preferences daemon has materialized the domain.
+    if ([preferences isKindOfClass:[NSDictionary class]] && preferences.count > 0) {
+        return preferences;
+    }
     return [NSDictionary dictionaryWithContentsOfFile:kPrefsPath] ?: @{};
 }
 
@@ -52,8 +70,32 @@ static void reloadPrefs(CFNotificationCenterRef center, void *observer, CFString
 }
 
 - (void)writePrefs:(NSDictionary *)dictionary {
-    if (![dictionary writeToFile:kPrefsPath atomically:YES]) return;
-    self.prefs = dictionary;
+    if (![dictionary isKindOfClass:[NSDictionary class]]) return;
+
+    // Keep the file update and notification in one place.  In particular, callers
+    // that only maintain an internal cache can suppress the notification and avoid
+    // recursively entering the Darwin notification callback.
+    CFStringRef appID = (CFStringRef)kIdentifier;
+    CFPreferencesAppSynchronize(appID);
+
+    // Replace the domain, rather than only setting keys.  This matters for
+    // removed shortcuts: stale keys must not survive an iOS 17 cfprefsd write.
+    CFArrayRef existingKeys = CFPreferencesCopyKeyList(appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+    NSMutableArray *keysToRemove = [NSMutableArray array];
+    if (existingKeys) {
+        for (NSString *existingKey in (__bridge NSArray *)existingKeys) {
+            if (!dictionary[existingKey]) [keysToRemove addObject:existingKey];
+        }
+        CFRelease(existingKeys);
+    }
+    CFPreferencesSetMultiple((__bridge CFDictionaryRef)dictionary,
+                             (__bridge CFArrayRef)keysToRemove,
+                             appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+    CFPreferencesAppSynchronize(appID);
+
+    // Keep the on-disk representation available to legacy preference cells.
+    [dictionary writeToFile:kPrefsPath atomically:YES];
+    self.prefs = [dictionary copy];
     [self postChangedNotification];
 }
 
@@ -62,10 +104,19 @@ static void reloadPrefs(CFNotificationCenterRef center, void *observer, CFString
 }
 
 - (void)setValue:(id)value forKey:(NSString *)key {
-    NSMutableDictionary *dictionary = [[self readPrefs] mutableCopy];
+    if (key.length == 0) return;
+    CFStringRef appID = (CFStringRef)kIdentifier;
+    CFPreferencesSetAppValue((__bridge CFStringRef)key,
+                              value ? (__bridge CFPropertyListRef)value : NULL,
+                              appID);
+    CFPreferencesAppSynchronize(appID);
+
+    NSMutableDictionary *dictionary = [[self readPrefs] mutableCopy] ?: [NSMutableDictionary dictionary];
     if (value) dictionary[key] = value;
     else [dictionary removeObjectForKey:key];
-    [self writePrefs:dictionary];
+    [dictionary writeToFile:kPrefsPath atomically:YES];
+    self.prefs = [dictionary copy];
+    [self postChangedNotification];
 }
 
 - (id)getValueForKey:(NSString *)key fromSandbox:(BOOL)isSandbox {
@@ -81,7 +132,21 @@ static void reloadPrefs(CFNotificationCenterRef center, void *observer, CFString
 }
 
 - (void)removeKey:(NSString *)key {
-    [self setValue:nil forKey:key];
+    [self removeKey:key notify:YES];
+}
+
+- (void)removeKey:(NSString *)key notify:(BOOL)notify {
+    if (key.length == 0) return;
+
+    CFStringRef appID = (CFStringRef)kIdentifier;
+    CFPreferencesSetAppValue((__bridge CFStringRef)key, NULL, appID);
+    CFPreferencesAppSynchronize(appID);
+
+    NSMutableDictionary *dictionary = [[self readPrefs] mutableCopy] ?: [NSMutableDictionary dictionary];
+    [dictionary removeObjectForKey:key];
+    [dictionary writeToFile:kPrefsPath atomically:YES];
+    self.prefs = [dictionary copy];
+    if (notify) [self postChangedNotification];
 }
 
 - (void)postChangedNotification {
