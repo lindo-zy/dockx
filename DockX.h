@@ -1,5 +1,6 @@
 #import "DXCollectionView.h"
 #import "TextOperation.h"
+#import <objc/message.h>
 
 @interface UIKeyboardImpl : UIView
 + (UIKeyboardImpl*)activeInstance;
@@ -34,6 +35,26 @@
 @property (readonly, assign, nonatomic) UIResponder <UITextInput> *inputDelegate;
 @property (nonatomic,readonly) UIResponder <UITextInput> *selectableInputDelegate;
 @end
+
+// iOS 17 removed UIKeyboardImpl.privateInputDelegate. Probe it before
+// sending the message and fall back to the public inputDelegate.
+static inline UIResponder *DXKeyboardInputDelegate(UIKeyboardImpl *keyboard) {
+    if (!keyboard) return nil;
+
+    id result = nil;
+    SEL privateSelector = NSSelectorFromString(@"privateInputDelegate");
+    if ([keyboard respondsToSelector:privateSelector]) {
+        id (*sendObject)(id, SEL) = (id (*)(id, SEL))objc_msgSend;
+        result = sendObject(keyboard, privateSelector);
+    }
+
+    if (!result && [keyboard respondsToSelector:@selector(inputDelegate)]) {
+        id (*sendObject)(id, SEL) = (id (*)(id, SEL))objc_msgSend;
+        result = sendObject(keyboard, @selector(inputDelegate));
+    }
+
+    return result;
+}
 
 @interface UIKBRenderConfig : NSObject
 +(id)configForAppearance:(long long)arg1 inputMode:(id)arg2 ;
@@ -357,4 +378,3 @@ typedef enum PSCellType {
    return [[NSMutableAttributedString alloc] initWithString:self];
 }
 @end
-

@@ -1,6 +1,6 @@
 ARCHS = arm64 arm64e
 
-TARGET ?= iphone:clang:17.0:16.0
+TARGET ?= iphone:clang:16.5:15.0
 THEOS_PACKAGE_SCHEME ?= rootless
 
 include $(THEOS)/makefiles/common.mk
@@ -12,7 +12,7 @@ DockXPrefs_INSTALL_PATH = /Library/PreferenceBundles
 DockXPrefs_FRAMEWORKS = UIKit CoreGraphics
 DockXPrefs_PRIVATE_FRAMEWORKS = Preferences AppSupport
 DockXPrefs_CFLAGS = -fobjc-arc
-DockXPrefs_LIBRARIES = rocketbootstrap sparkcolourpicker
+DockXPrefs_LIBRARIES =
 
 include $(THEOS_MAKE_PATH)/bundle.mk
 

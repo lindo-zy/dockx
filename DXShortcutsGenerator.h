@@ -1,12 +1,18 @@
+#if defined(THEOS_PACKAGE_SCHEME_ROOTHIDE)
+#import <roothide.h>
+#define DX_ROOT_PATH_NS(path) jbroot(path)
+#else
 #import <rootless.h>
+#define DX_ROOT_PATH_NS(path) ROOT_PATH_NS(path)
+#endif
 
-#define copyLogDylib ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/CopyLog.dylib")
-#define translomaticDylib ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Translomatic.dylib")
-#define wasabiDylib ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Wasabi.dylib")
-#define pasitheaDylib ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Pasithea2.dylib")
-#define copypastaDylib ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Copypasta.dylib")
-#define loupeDylib ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Loupe.dylib")
-#define tranzloDylib ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Tranzlo.dylib")
+#define copyLogDylib DX_ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/CopyLog.dylib")
+#define translomaticDylib DX_ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Translomatic.dylib")
+#define wasabiDylib DX_ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Wasabi.dylib")
+#define pasitheaDylib DX_ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Pasithea2.dylib")
+#define copypastaDylib DX_ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Copypasta.dylib")
+#define loupeDylib DX_ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Loupe.dylib")
+#define tranzloDylib DX_ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Tranzlo.dylib")
 
 @interface DXShortcutsGenerator : NSObject
 @property (nonatomic, assign) BOOL copyLogDylibExist;

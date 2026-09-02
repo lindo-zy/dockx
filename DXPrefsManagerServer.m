@@ -38,18 +38,6 @@
 - (instancetype)init {
     self = [super init];
     if (self) {
-        _messagingCenter = [CPDistributedMessagingCenter centerNamed:kIPCCenterPrefsManager];
-        rocketbootstrap_distributedmessagingcenter_apply(_messagingCenter);
-        
-        [_messagingCenter runServerOnCurrentThread];
-        [_messagingCenter registerForMessageName:@"readPrefs" target:self selector:@selector(readPrefs:withUserInfo:)];
-        [_messagingCenter registerForMessageName:@"writePrefs" target:self selector:@selector(writePrefs:withUserInfo:)];
-        [_messagingCenter registerForMessageName:@"setValue" target:self selector:@selector(setValue:withUserInfo:)];
-        [_messagingCenter registerForMessageName:@"getValueForKey" target:self selector:@selector(getValueForKey:withUserInfo:)];
-        [_messagingCenter registerForMessageName:@"removeKey" target:self selector:@selector(removeKey:withUserInfo:)];
-
-        
-        
     }
     
     return self;
@@ -97,4 +85,3 @@
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)kPrefsChangedIdentifier, NULL, NULL, YES);
 }
 @end
-

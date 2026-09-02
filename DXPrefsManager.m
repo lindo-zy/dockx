@@ -1,35 +1,23 @@
 #import "common.h"
 #import "DXPrefsManager.h"
 
-static CPDistributedMessagingCenter *c = nil;
-
 static void reloadPrefs(CFNotificationCenterRef center, void *observer, CFStringRef name,
                         const void *object, CFDictionaryRef userInfo) {
     [(__bridge DXPrefsManager *)observer reload];
 }
-
 
 @implementation DXPrefsManager
 
 + (void)load {
     @autoreleasepool {
         NSArray *args = [[NSClassFromString(@"NSProcessInfo") processInfo] arguments];
-        
-        if (args.count != 0) {
-            NSString *executablePath = args[0];
-            
-            if (executablePath) {
-                NSString *processName = [executablePath lastPathComponent];
-                
-                BOOL isSpringBoard = [processName isEqualToString:@"SpringBoard"];
-                BOOL isApplication = [executablePath rangeOfString:@"/Application"].location != NSNotFound;
-                
-                if (isSpringBoard || isApplication) {
-                    [DXPrefsManager sharedInstance];
-                    
-                }
-            }
-        }
+        if (args.count == 0) return;
+
+        NSString *executablePath = args[0];
+        NSString *processName = executablePath.lastPathComponent;
+        BOOL isSpringBoardProcess = [processName isEqualToString:@"SpringBoard"];
+        BOOL isApplicationProcess = [executablePath rangeOfString:@"/Application"].location != NSNotFound;
+        if (isSpringBoardProcess || isApplicationProcess) [DXPrefsManager sharedInstance];
     }
 }
 
@@ -43,98 +31,62 @@ static void reloadPrefs(CFNotificationCenterRef center, void *observer, CFString
 - (instancetype)init {
     self = [super init];
     if (self) {
-        
-        c = [CPDistributedMessagingCenter centerNamed:kIPCCenterPrefsManager];
-        rocketbootstrap_distributedmessagingcenter_apply(c);
-        
-        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), (__bridge const void *)self, &reloadPrefs, (CFStringRef)kPrefsChangedIdentifier, NULL, 0);
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                         (__bridge const void *)self, &reloadPrefs,
+                                         (CFStringRef)kPrefsChangedIdentifier, NULL, 0);
         self.prefs = [self readPrefs];
     }
     return self;
 }
 
--(NSDictionary *)readPrefsFromSandbox:(BOOL)isSandbox{
-    if (isSandbox){
-        return [c sendMessageAndReceiveReplyName:@"readPrefs" userInfo:nil];
-    }else{
-        return [self readPrefs];
-    }
+- (NSDictionary *)readPrefsFromSandbox:(BOOL)isSandbox {
+    return [self readPrefs];
 }
 
--(NSDictionary *)readPrefs{
-    CFStringRef appID = (CFStringRef)kIdentifier;
-    CFPreferencesAppSynchronize(appID);
-    CFArrayRef keyList = CFPreferencesCopyKeyList(appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-    if (!keyList) {
-        return @{};
-    }
-    NSDictionary *dictionary = (NSDictionary *)CFBridgingRelease(CFPreferencesCopyMultiple(keyList, appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost));
-    CFRelease(keyList);
-    return dictionary;
+- (NSDictionary *)readPrefs {
+    return [NSDictionary dictionaryWithContentsOfFile:kPrefsPath] ?: @{};
 }
 
--(void)writePrefs:(NSDictionary *)dictionary fromSandbox:(BOOL)isSandbox{
-    if (isSandbox){
-        [c sendMessageAndReceiveReplyName:@"writePrefs" userInfo:dictionary];
-    }else{
-        [self writePrefs:dictionary];
-    }
+- (void)writePrefs:(NSDictionary *)dictionary fromSandbox:(BOOL)isSandbox {
+    [self writePrefs:dictionary];
 }
 
--(void)writePrefs:(NSDictionary *)dictionary{
-    CFStringRef appID = (CFStringRef)kIdentifier;
-    CFPreferencesSetMultiple((__bridge CFDictionaryRef)dictionary, nil, appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-    CFPreferencesAppSynchronize(appID);
-    //[self postChangedNotification];
+- (void)writePrefs:(NSDictionary *)dictionary {
+    if (![dictionary writeToFile:kPrefsPath atomically:YES]) return;
+    self.prefs = dictionary;
+    [self postChangedNotification];
 }
 
--(void)setValue:(id)value forKey:(NSString *)key fromSandbox:(BOOL)isSandbox{
-    if (isSandbox){
-        NSDictionary *data = @{@"key":key, @"value":value};
-        [c sendMessageAndReceiveReplyName:@"setValue" userInfo:data];
-    }else{
-        [self setValue:value forKey:key];
-    }
+- (void)setValue:(id)value forKey:(NSString *)key fromSandbox:(BOOL)isSandbox {
+    [self setValue:value forKey:key];
 }
 
--(void)setValue:(id)value forKey:(NSString *)key{
-    CFStringRef appID = (CFStringRef)kIdentifier;
-    CFPreferencesSetAppValue((CFStringRef)key, (CFPropertyListRef)value, appID);
-    CFPreferencesAppSynchronize(appID);
-    //[self postChangedNotification];
+- (void)setValue:(id)value forKey:(NSString *)key {
+    NSMutableDictionary *dictionary = [[self readPrefs] mutableCopy];
+    if (value) dictionary[key] = value;
+    else [dictionary removeObjectForKey:key];
+    [self writePrefs:dictionary];
 }
 
--(id)getValueForKey:(NSString *)key fromSandbox:(BOOL)isSandbox{
-    if (isSandbox){
-        NSDictionary *data = @{@"key":key};
-        NSDictionary *valueData = [c sendMessageAndReceiveReplyName:@"getValueForKey" userInfo:data];
-        return valueData[@"value"];
-    }else{
-        return [self getValueForKey:key];
-    }
+- (id)getValueForKey:(NSString *)key fromSandbox:(BOOL)isSandbox {
+    return [self getValueForKey:key];
 }
 
--(id)getValueForKey:(NSString *)key{
-    CFStringRef appID = (CFStringRef)kIdentifier;
-    CFPreferencesAppSynchronize(appID);
-    return CFBridgingRelease(CFPreferencesCopyAppValue((CFStringRef)key, appID));
+- (id)getValueForKey:(NSString *)key {
+    return [self readPrefs][key];
 }
 
--(void)removeKey:(NSString *)key fromSandbox:(BOOL)isSandbox{
-    if (isSandbox){
-        NSDictionary *data = @{@"key":key};
-        [c sendMessageAndReceiveReplyName:@"removeKey" userInfo:data];
-    }else{
-        return [self removeKey:key];
-    }
+- (void)removeKey:(NSString *)key fromSandbox:(BOOL)isSandbox {
+    [self removeKey:key];
 }
 
--(void)removeKey:(NSString *)key{
+- (void)removeKey:(NSString *)key {
     [self setValue:nil forKey:key];
 }
 
--(void)postChangedNotification{
-    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)kPrefsChangedIdentifier, NULL, NULL, YES);
+- (void)postChangedNotification {
+    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
+                                          (CFStringRef)kPrefsChangedIdentifier, NULL, NULL, YES);
 }
 
 - (void)reload {
@@ -142,7 +94,9 @@ static void reloadPrefs(CFNotificationCenterRef center, void *observer, CFString
 }
 
 - (void)dealloc {
-    CFNotificationCenterRemoveObserver(CFNotificationCenterGetDarwinNotifyCenter(), (__bridge const void *)self, (CFStringRef)kPrefsChangedIdentifier, NULL);
+    CFNotificationCenterRemoveObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                        (__bridge const void *)self,
+                                        (CFStringRef)kPrefsChangedIdentifier, NULL);
 }
 
 @end

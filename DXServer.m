@@ -39,16 +39,6 @@ static KeyboardController *kbController;
 
 - (instancetype)init {
     if ((self = [super init])) {
-        
-        _messagingCenter = [CPDistributedMessagingCenter centerNamed:kIPCCenterDockX];
-        rocketbootstrap_distributedmessagingcenter_apply(_messagingCenter);
-
-        [_messagingCenter runServerOnCurrentThread];
-        [_messagingCenter registerForMessageName:@"getAutoCorrectionValue" target:self selector:@selector(getAutoCorrectionValue:withUserInfo:)];
-        [_messagingCenter registerForMessageName:@"setAutoCorrectionValue" target:self selector:@selector(setAutoCorrectionValue:withUserInfo:)];
-        [_messagingCenter registerForMessageName:@"getAutoCapitalizationValue" target:self selector:@selector(getAutoCapitalizationValue:withUserInfo:)];
-        [_messagingCenter registerForMessageName:@"setAutoCapitalizationValue" target:self selector:@selector(setAutoCapitalizationValue:withUserInfo:)];
-        [_messagingCenter registerForMessageName:@"runCommand" target:self selector:@selector(runCommand:withUserInfo:)];
     }
 
     return self;

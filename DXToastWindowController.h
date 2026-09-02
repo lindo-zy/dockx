@@ -1,4 +1,4 @@
-#import <rocketbootstrap/rocketbootstrap.h>
+#import <Foundation/Foundation.h>
 
 @interface UIWindow ()
 - (void)_setSecure:(BOOL)arg1;

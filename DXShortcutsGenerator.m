@@ -97,10 +97,10 @@ static const NSBundle *tweakBundle;
 -(NSArray *)thirdPartyImageNameArray:(NSArray *)array foriOS:(NSInteger)iosVersion{
     NSMutableArray *thirdPartArray = [array mutableCopy];
     if (self.copyLogDylibExist){
-        [thirdPartArray addObject:[NSString stringWithFormat:@"CUSTOM_%@", ROOT_PATH_NS(@"/Library/Application Support/CopyLog/Ressources.bundle/keyboardlogo.png")]];
+        [thirdPartArray addObject:[NSString stringWithFormat:@"CUSTOM_%@", DX_ROOT_PATH_NS(@"/Library/Application Support/CopyLog/Ressources.bundle/keyboardlogo.png")]];
     }
     if (self.translomaticDylibExist){
-        [thirdPartArray addObject:[NSString stringWithFormat:@"CUSTOM_%@", ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/com.foxfort.translomatic.bundle/trans_24.png")]];
+        [thirdPartArray addObject:[NSString stringWithFormat:@"CUSTOM_%@", DX_ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/com.foxfort.translomatic.bundle/trans_24.png")]];
     }
     if (self.wasabiDylibExist){
         if (iosVersion == 0){
@@ -131,7 +131,7 @@ static const NSBundle *tweakBundle;
         }
     }
     if (self.tranzloDylibExist){
-        [thirdPartArray addObject:[NSString stringWithFormat:@"CUSTOM_%@", ROOT_PATH_NS(@"/Library/Shortmoji/Shortcuts/TranzloTranslateShortcut.bundle/icon.png")]];
+        [thirdPartArray addObject:[NSString stringWithFormat:@"CUSTOM_%@", DX_ROOT_PATH_NS(@"/Library/Shortmoji/Shortcuts/TranzloTranslateShortcut.bundle/icon.png")]];
     }
     return thirdPartArray;
 }

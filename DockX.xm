@@ -3,7 +3,6 @@
 #import "DXShared.h"
 #import "DXToastWindowController.h"
 #import "DXHelper.h"
-#import <SparkColourPickerUtils.h>
 
 
 id delegate;
@@ -128,7 +127,7 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
         dispatch_async(dispatch_get_main_queue(), ^{
             
             kbImpl = [objc_getClass("UIKeyboardImpl") activeInstance];
-            delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+            delegate = DXKeyboardInputDelegate(kbImpl);
             if ([delegate respondsToSelector:@selector(keyboardType)]){
                 if (shouldUpdateTrueKBType){
                     self.dockx.trueKBType = [[NSNumber numberWithInt:[delegate keyboardType]] intValue];
@@ -325,7 +324,6 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
      if (isApplication){
      [[DXPrefsManager sharedInstance] setValue:[NSNumber numberWithBool:toggledOn] forKey:kToggledOnkey fromSandbox:isApplication];
      CPDistributedMessagingCenter *c = [CPDistributedMessagingCenter centerNamed:@"com.udevs.dockx.server"];
-     rocketbootstrap_distributedmessagingcenter_apply(c);
      [c sendMessageAndReceiveReplyName:@"dockXSaveValue" userInfo:@{@"key":kToggledOnkey, @"value":[NSNumber numberWithBool:toggledOn]}];
      }else{
      CFPreferencesSetAppValue((CFStringRef)kToggledOnkey, (CFPropertyListRef)[NSNumber numberWithBool:toggledOn], (CFStringRef)kIdentifier);
@@ -584,7 +582,7 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
             //if (![[self.dockx visibleCells] containsObject:self.dockx.keyboardInputTypeCell]) return;
             
             kbImpl = [objc_getClass("UIKeyboardImpl") activeInstance];
-            delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+            delegate = DXKeyboardInputDelegate(kbImpl);
             
             UIImage *image;
             NSMutableAttributedString *imageOfName = [[NSMutableAttributedString alloc] initWithString:@""];
@@ -772,7 +770,7 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
     //if ([key isEqualToString:@" "]){
     if (!dockView.dockx.hidden){
         kbImpl = [%c(UIKeyboardImpl) activeInstance];
-        delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+        delegate = DXKeyboardInputDelegate(kbImpl);
         [kbImpl clearInputWithCandidatesCleared:YES];
         if ([self respondsToSelector:@selector(clearContinuousPathView)]){
             [self clearContinuousPathView];
@@ -793,7 +791,7 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
     //if ([key isEqualToString:@" "]){
     if (!dockView.dockx.hidden){
         kbImpl = [%c(UIKeyboardImpl) activeInstance];
-        delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+        delegate = DXKeyboardInputDelegate(kbImpl);
         [kbImpl clearInputWithCandidatesCleared:YES];
         if ([self respondsToSelector:@selector(clearContinuousPathView)]){
             [self clearContinuousPathView];
@@ -918,7 +916,7 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
             HBLogDebug(@"cellIdentifier: %@", cellIdentifier);
             //[dockV.dockx shakeButton:cell.btn];
             kbImpl = [%c(UIKeyboardImpl) activeInstance];
-            delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+            delegate = DXKeyboardInputDelegate(kbImpl);
             [kbImpl clearInputWithCandidatesCleared:YES];
             
             [dockV.dockx activateShootingStarActions:cell.btn];
@@ -946,7 +944,7 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
         //[dockView.dockx removeFromSuperview];
         //[dockView layoutSubviews];
         kbImpl = [%c(UIKeyboardImpl) activeInstance];
-        delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+        delegate = DXKeyboardInputDelegate(kbImpl);
         [kbImpl clearInputWithCandidatesCleared:YES];
         
         if (elapsedTime > 0.2){
@@ -1066,7 +1064,6 @@ static void reloadPrefs() {
      } else {
      isSandboxed = YES;
      CPDistributedMessagingCenter *c = [CPDistributedMessagingCenter centerNamed:@"com.udevs.dockx.server"];
-     rocketbootstrap_distributedmessagingcenter_apply(c);
      prefs = [[c sendMessageAndReceiveReplyName:@"dockXFetchPrefs" userInfo:nil] mutableCopy];
      
      }
@@ -1081,10 +1078,10 @@ static void reloadPrefs() {
     //currentTintColor = nil;
     if (preferencesBool(kColorEnabledkey,NO)){
         
-        if (preferencesBool(kShortcutsTintEnabled,YES)) currentTintColor = [SparkColourPickerUtils colourWithString:prefs[@"shortcutstint"]  withFallback:@"#ff0000"];
-        if (preferencesBool(kToastTintEnabled,YES)) toastTintColor = [SparkColourPickerUtils colourWithString:prefs[@"toasttint"]  withFallback:@"#ff0000"];
-        if (preferencesBool(kToastBackgroundTintEnabled,YES)) toastBackgroundTintColor = [SparkColourPickerUtils colourWithString:prefs[@"toastbackgroundtint"]  withFallback:@"#000000"];
-        if (preferencesBool(kToastBackgroundTintEnabled,YES)) toastBackgroundTintColor = [SparkColourPickerUtils colourWithString:prefs[@"shortcutsbackgroundtint"]  withFallback:@"#5B5B5B"];
+        if (preferencesBool(kShortcutsTintEnabled,YES)) currentTintColor = DXColorFromHex(prefs[@"shortcutstint"], @"#ff0000");
+        if (preferencesBool(kToastTintEnabled,YES)) toastTintColor = DXColorFromHex(prefs[@"toasttint"], @"#ff0000");
+        if (preferencesBool(kToastBackgroundTintEnabled,YES)) toastBackgroundTintColor = DXColorFromHex(prefs[@"toastbackgroundtint"], @"#000000");
+        if (preferencesBool(kToastBackgroundTintEnabled,YES)) toastBackgroundTintColor = DXColorFromHex(prefs[@"shortcutsbackgroundtint"], @"#5B5B5B");
     }
     
     toggledOn = preferencesBool(kToggledOnkey,YES);

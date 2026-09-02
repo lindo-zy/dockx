@@ -1,5 +1,11 @@
 #!/bin/bash
 
-rm -rf /private/var/mobile/Library/Caches/com.udevs.dockx || true
+if [[ x$JB_ROOT_PATH != x"" ]]; then
+    JBROOT="/var/jb"
+else
+    JBROOT=""
+fi
+
+rm -rf "$JBROOT/var/mobile/Library/Caches/com.udevs.dockx" || true
 
 exit 0

@@ -825,14 +825,7 @@
                               nil];
     
     //if (![NSStringFromClass([[UIApplication sharedApplication] class]) isEqualToString:@"SpringBoard"]){
-    if (!isSpringBoard){
-        if (!self.toastCenter) self.toastCenter = [self IPCCenterNamed:kIPCCenterToast];
-        [self.toastCenter sendMessageAndReceiveReplyName:@"showToastRequest" userInfo:userInfo];
-    }else{
-        [[DXToastWindowController sharedInstance] showToastRequest:@"showToastRequest" withUserInfo:userInfo];
-        //SpringBoard *sb = (SpringBoard *)[UIApplication sharedApplication];
-        //[sb showToastRequest:@"showToastRequest" withUserInfo:userInfo];
-    }
+    [[DXToastWindowController sharedInstance] showToastRequest:@"showToastRequest" withUserInfo:userInfo];
     
     
     
@@ -967,7 +960,7 @@
 
 -(void)beginUpdateDelegate{
     kbImpl = [objc_getClass("UIKeyboardImpl") activeInstance];
-    delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+    delegate = DXKeyboardInputDelegate(kbImpl);
 }
 
 -(void)beginImpactAnimationAndUpdateDelegate:(SEL)action sender:(UIButton *)sender toastWidthOffset:(int)toastWidthOffset toastHeightOffset:(int)toastHeightOffset{
@@ -1368,7 +1361,7 @@
  -(void)boldAction:(UIButton*)sender{
  [self triggerImpactAndAnimationWithButton:sender selectorName:NSStringFromSelector(_cmd) toastWidthOffset:0 toastHeightOffset:0];
  kbImpl = [objc_getClass("UIKeyboardImpl") activeInstance];
- delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+ delegate = DXKeyboardInputDelegate(kbImpl);
  UIResponder <UITextInput> *tempDelegate = (UIResponder <UITextInput> *)delegate;
  
  BOOL isWKContentView = [tempDelegate isKindOfClass:objc_getClass("WKContentView")];
@@ -1779,33 +1772,20 @@
 }
 
 -(CPDistributedMessagingCenter *)IPCCenterNamed:(NSString *)centerName{
-    CPDistributedMessagingCenter *c = [CPDistributedMessagingCenter centerNamed:centerName];
-    rocketbootstrap_distributedmessagingcenter_apply(c);
-    return c;
+    return nil;
 }
 
 -(BOOL)isAutoCorrectionEnabled{
-    BOOL enabled = NO;
-    if (!isSpringBoard){
-        if (!self.dockxCenter) self.dockxCenter = [self IPCCenterNamed:kIPCCenterDockX];
-        NSDictionary *result = [self.dockxCenter sendMessageAndReceiveReplyName:@"getAutoCorrectionValue" userInfo:nil];
-        enabled = [result[@"value"] boolValue];
-    }else{
-        [[objc_getClass("UIKeyboardPreferencesController") sharedPreferencesController] synchronizePreferences];
-        enabled = [[objc_getClass("UIKeyboardPreferencesController") sharedPreferencesController] boolForKey:7];
-    }
-    return enabled;
+    UIKeyboardPreferencesController *preferencesController = [UIKeyboardPreferencesController sharedPreferencesController];
+    [preferencesController synchronizePreferences];
+    return [preferencesController boolForKey:7];
 }
 
 -(void)setAutoCorrection:(BOOL)enabled{
-    if (!isSpringBoard){
-        if (!self.dockxCenter) self.dockxCenter = [self IPCCenterNamed:kIPCCenterDockX];
-        [self.dockxCenter sendMessageAndReceiveReplyName:@"setAutoCorrectionValue" userInfo:@{@"value":[NSNumber numberWithBool:enabled]}];
-    }else{
-        [[objc_getClass("UIKeyboardPreferencesController") sharedPreferencesController] setValue:[NSNumber numberWithBool:enabled] forKey:7];
-        [[objc_getClass("UIKeyboardPreferencesController") sharedPreferencesController] synchronizePreferences];
-        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFSTR("AppleKeyboardsSettingsChangedNotification"), NULL, NULL, YES);
-    }
+    UIKeyboardPreferencesController *preferencesController = [UIKeyboardPreferencesController sharedPreferencesController];
+    [preferencesController setValue:[NSNumber numberWithBool:enabled] forKey:7];
+    [preferencesController synchronizePreferences];
+    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFSTR("AppleKeyboardsSettingsChangedNotification"), NULL, NULL, YES);
 }
 
 -(void)updateAutoCorrection:(NSNotification*)notification{
@@ -1889,53 +1869,16 @@
 }
 
 -(BOOL)isAutoCapitalizationEnabled{
-    BOOL enabled = NO;
-    if (!isSpringBoard){
-        if (!self.dockxCenter) self.dockxCenter = [self IPCCenterNamed:kIPCCenterDockX];
-        NSDictionary *result = [self.dockxCenter sendMessageAndReceiveReplyName:@"getAutoCapitalizationValue" userInfo:nil];
-        enabled = [result[@"value"] boolValue];
-    }else{
-        [[objc_getClass("UIKeyboardPreferencesController") sharedPreferencesController] synchronizePreferences];
-        enabled = [[objc_getClass("UIKeyboardPreferencesController") sharedPreferencesController] boolForKey:8];
-    }
-    return enabled;
+    UIKeyboardPreferencesController *preferencesController = [UIKeyboardPreferencesController sharedPreferencesController];
+    [preferencesController synchronizePreferences];
+    return [preferencesController boolForKey:8];
 }
 
 -(void)setAutoCapitalization:(BOOL)enabled{
-    if (!isSpringBoard){
-        if (!self.dockxCenter) self.dockxCenter = [self IPCCenterNamed:kIPCCenterDockX];
-        [self.dockxCenter sendMessageAndReceiveReplyName:@"setAutoCapitalizationValue" userInfo:@{@"value":[NSNumber numberWithBool:enabled]}];
-    }else{
-        if (!kbController){
-            
-            dlopen("/System/Library/PreferenceBundles/KeyboardSettings.bundle/KeyboardSettings", RTLD_LAZY);
-            PSRootController *rootController = [[PSRootController alloc] initWithTitle:@"Preferences" identifier:@"com.apple.Preferences"];
-            kbController = [[NSClassFromString(@"KeyboardController") alloc] init];
-            if ([kbController respondsToSelector:@selector(setRootController:)]){
-                [kbController setRootController:rootController];
-            }
-            if ([kbController respondsToSelector:@selector(setParentController:)]){
-                [kbController setParentController:rootController];
-            }
-            //if ([kbController respondsToSelector:@selector(specifiersWithSpecifier:)])
-            //[kbController specifiersWithSpecifier:nil];
-        }
-        NSArray *specifiers = [kbController loadAllKeyboardPreferences];
-        PSSpecifier *autoCapsSpecifier;
-        for (PSSpecifier *sp in specifiers){
-            if ([sp.identifier isEqualToString:@"KeyboardAutocapitalization"]){
-                autoCapsSpecifier = sp;
-                break;
-            }
-        }
-        if (autoCapsSpecifier){
-            [kbController setKeyboardPreferenceValue:[NSNumber numberWithBool:enabled] forSpecifier:autoCapsSpecifier];
-        }
-        
-        //[[objc_getClass("UIKeyboardPreferencesController") sharedPreferencesController] setValue:[NSNumber numberWithBool:enabled] forKey:8];
-        //[[objc_getClass("UIKeyboardPreferencesController") sharedPreferencesController] synchronizePreferences];
-        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFSTR("AppleKeyboardsSettingsChangedNotification"), NULL, NULL, YES);
-    }
+    UIKeyboardPreferencesController *preferencesController = [UIKeyboardPreferencesController sharedPreferencesController];
+    [preferencesController setValue:[NSNumber numberWithBool:enabled] forKey:8];
+    [preferencesController synchronizePreferences];
+    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFSTR("AppleKeyboardsSettingsChangedNotification"), NULL, NULL, YES);
 }
 
 -(void)updateAutoCapitalization:(NSNotification*)notification{
@@ -2057,7 +2000,7 @@
 -(void)keyboardTypeAction:(UIButton*)sender{
     [self autoPaginationControl];
     kbImpl = [objc_getClass("UIKeyboardImpl") activeInstance];
-    delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+    delegate = DXKeyboardInputDelegate(kbImpl);
     if ([delegate respondsToSelector:@selector(keyboardType)]){
         //HBLogDebug(@"keyboardTypeAction: %ld", [delegate keyboardType]);
         [self triggerImpactAndAnimationWithButton:sender selectorName:NSStringFromSelector(_cmd) toastWidthOffset:0 toastHeightOffset:0];
@@ -2095,7 +2038,7 @@
 -(void)updateKeyboardType:(NSNotification*)notification{
     //HBLogDebug(@"updateKeyboardType");
     kbImpl = [objc_getClass("UIKeyboardImpl") activeInstance];
-    delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+    delegate = DXKeyboardInputDelegate(kbImpl);
     NSMutableAttributedString *imageOfName = [[NSMutableAttributedString alloc] initWithString:@""];
     
     UIImage *image;
@@ -2165,13 +2108,7 @@
 
 -(void)runCommand:(NSString *)cmd{
     if ([cmd length] != 0){
-        if (!isSpringBoard){
-            if (!self.dockxCenter) self.dockxCenter = [self IPCCenterNamed:kIPCCenterDockX];
-            [self.dockxCenter sendMessageAndReceiveReplyName:@"runCommand" userInfo:@{@"value":cmd}];
-        }else{
-            DXRunShellCommand(cmd);
-            
-        }
+        DXRunShellCommand(cmd);
     }
 }
 
@@ -2934,7 +2871,7 @@
             [self moveCursorStartOfLineAction:nil];
         }else{
             kbImpl = [objc_getClass("UIKeyboardImpl") activeInstance];
-            delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+            delegate = DXKeyboardInputDelegate(kbImpl);
             UIResponder <UITextInput> *tempDelegate = (UIResponder <UITextInput> *)delegate;
             self.hapticType = 0;
             [self triggerImpactAndAnimationWithButton:nil selectorName:@"moveCursorStartOfLineAction:" toastWidthOffset:0 toastHeightOffset:0];
@@ -2976,7 +2913,7 @@
             [self moveCursorEndOfLineAction:nil];
         }else{
             kbImpl = [objc_getClass("UIKeyboardImpl") activeInstance];
-            delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+            delegate = DXKeyboardInputDelegate(kbImpl);
             UIResponder <UITextInput> *tempDelegate = (UIResponder <UITextInput> *)delegate;
             self.hapticType = 0;
             [self triggerImpactAndAnimationWithButton:nil selectorName:@"moveCursorEndOfLineAction:" toastWidthOffset:0 toastHeightOffset:0];
@@ -3017,7 +2954,7 @@
             [self moveCursorStartOfParagraphAction:nil];
         }else{
             kbImpl = [objc_getClass("UIKeyboardImpl") activeInstance];
-            delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+            delegate = DXKeyboardInputDelegate(kbImpl);
             UIResponder <UITextInput> *tempDelegate = (UIResponder <UITextInput> *)delegate;
             self.hapticType = 0;
             [self triggerImpactAndAnimationWithButton:nil selectorName:@"moveCursorStartOfParagraphAction:" toastWidthOffset:0 toastHeightOffset:0];
@@ -3071,7 +3008,7 @@
             [self moveCursorEndOfParagraphAction:nil];
         }else{
             kbImpl = [objc_getClass("UIKeyboardImpl") activeInstance];
-            delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+            delegate = DXKeyboardInputDelegate(kbImpl);
             UIResponder <UITextInput> *tempDelegate = (UIResponder <UITextInput> *)delegate;
             self.hapticType = 0;
             [self triggerImpactAndAnimationWithButton:nil selectorName:@"moveCursorEndOfParagraphAction:" toastWidthOffset:0 toastHeightOffset:0];
@@ -3307,18 +3244,18 @@
     
     if (recognizer.state == UIGestureRecognizerStateBegan) {
         kbImpl = [objc_getClass("UIKeyboardImpl") activeInstance];
-        delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+        delegate = DXKeyboardInputDelegate(kbImpl);
         if ([delegate respondsToSelector:@selector(keyboardType)]){
             self.hapticType = 2;
             [self triggerImpactAndAnimationWithButton:nil selectorName:NSStringFromSelector(_cmd) toastWidthOffset:0 toastHeightOffset:0];
             kbImpl = [objc_getClass("UIKeyboardImpl") activeInstance];
-            delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+            delegate = DXKeyboardInputDelegate(kbImpl);
             [delegate setKeyboardType:self.trueKBType];
             [delegate reloadInputViews];
         }
     }else if (recognizer.state == UIGestureRecognizerStateEnded){
         kbImpl = [objc_getClass("UIKeyboardImpl") activeInstance];
-        delegate = kbImpl.privateInputDelegate ?: kbImpl.inputDelegate;
+        delegate = DXKeyboardInputDelegate(kbImpl);
         if ([delegate respondsToSelector:@selector(keyboardType)]){
             [self shakeView:recognizer.view];
         }

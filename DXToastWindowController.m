@@ -34,12 +34,6 @@ static void orientationChanged(){
 
 - (instancetype)init {
 	if ((self = [super init])) {
-		_messagingCenter = [CPDistributedMessagingCenter centerNamed:kIPCCenterToast];
-		rocketbootstrap_distributedmessagingcenter_apply(_messagingCenter);
-		
-		[_messagingCenter runServerOnCurrentThread];
-		[_messagingCenter registerForMessageName:@"showToastRequest" target:self selector:@selector(showToastRequest:withUserInfo:)];
-		
 		CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)&orientationChanged, CFSTR("com.apple.springboard.screenchanged"), NULL, 0);
 		CFNotificationCenterAddObserver(CFNotificationCenterGetLocalCenter(), NULL, (CFNotificationCallback)&orientationChanged, CFSTR("UIWindowDidRotateNotification"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 	}
@@ -225,4 +219,3 @@ static void orientationChanged(){
 	return nil;
 }
 @end
-

@@ -1,4 +1,4 @@
-#import <rocketbootstrap/rocketbootstrap.h>
+#import <Foundation/Foundation.h>
 
 @interface DXPrefsManager : NSObject{
     CPDistributedMessagingCenter * _messagingCenter;

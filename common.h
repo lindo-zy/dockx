@@ -1,12 +1,20 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <HBLog.h>
+#if defined(THEOS_PACKAGE_SCHEME_ROOTHIDE)
+#import <roothide.h>
+#define DX_ROOT_PATH_NS(path) jbroot(path)
+#else
 #import <rootless.h>
+#define DX_ROOT_PATH_NS(path) ROOT_PATH_NS(path)
+#endif
 #import <spawn.h>
+
+@class CPDistributedMessagingCenter;
 
 #import "DXPrefsManager.h"
 
-#define bundlePath ROOT_PATH_NS(@"/Library/PreferenceBundles/DockXPrefs.bundle")
+#define bundlePath DX_ROOT_PATH_NS(@"/Library/PreferenceBundles/DockXPrefs.bundle")
 //#define dockxBundlePath @"/Library/Application Support/DockX.bundle"
 #define LOCALIZED(str) [tweakBundle localizedStringForKey:str value:@"" table:nil]
 
@@ -119,7 +127,32 @@
 
 #define secondActionDelay 0.05
 
-#define DockXCachePath @"/private/var/mobile/Library/Caches/com.udevs.dockx"
+#define DockXCachePath DX_ROOT_PATH_NS(@"/var/mobile/Library/Caches/com.udevs.dockx")
+
+static inline UIColor *DXColorFromHex(NSString *value, NSString *fallback) {
+    NSString *hex = [value isKindOfClass:[NSString class]] ? value : fallback;
+    hex = [hex stringByReplacingOccurrencesOfString:@"#" withString:@""];
+    unsigned int color = 0;
+    NSScanner *scanner = [NSScanner scannerWithString:hex];
+    if (![scanner scanHexInt:&color]) hex = [fallback stringByReplacingOccurrencesOfString:@"#" withString:@""];
+    if (hex.length == 6) {
+        scanner = [NSScanner scannerWithString:hex];
+        [scanner scanHexInt:&color];
+        return [UIColor colorWithRed:((color >> 16) & 0xff) / 255.0
+                               green:((color >> 8) & 0xff) / 255.0
+                                blue:(color & 0xff) / 255.0
+                               alpha:1.0];
+    }
+    if (hex.length == 8) {
+        scanner = [NSScanner scannerWithString:hex];
+        [scanner scanHexInt:&color];
+        return [UIColor colorWithRed:((color >> 16) & 0xff) / 255.0
+                               green:((color >> 8) & 0xff) / 255.0
+                                blue:(color & 0xff) / 255.0
+                               alpha:((color >> 24) & 0xff) / 255.0];
+    }
+    return [UIColor redColor];
+}
 
 static inline void DXRunShellCommand(NSString *command) {
     if (command.length == 0) return;
