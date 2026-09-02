@@ -1,7 +1,6 @@
 #import "common.h"
 #import "DXServer.h"
 #import "DockX.h"
-#import "NSTask.h"
 #import <dlfcn.h>
 #import <objc/runtime.h>
 
@@ -112,14 +111,7 @@ static KeyboardController *kbController;
 -(NSDictionary *)runCommand:(NSString *)name withUserInfo:(NSDictionary *)userInfo{
     NSString *cmd = userInfo[@"value"];
     if ([cmd length] != 0){
-        NSMutableArray *taskArgs = [[NSMutableArray alloc] init];
-        taskArgs = [NSMutableArray arrayWithObjects:@"-c", cmd, nil];
-        //taskArgs = [NSMutableArray arrayWithObjects:@"-c", @"stb -m $(date +'%T')", nil];
-        NSTask * task = [[NSTask alloc] init];
-        [task setLaunchPath:@"/bin/bash"];
-        //[task setCurrentDirectoryPath:@"/"];
-        [task setArguments:taskArgs];
-        [task launch];
+        DXRunShellCommand(cmd);
     }
     return nil;
 

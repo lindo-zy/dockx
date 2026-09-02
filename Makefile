@@ -1,9 +1,12 @@
 export ARCHS = arm64 arm64e
 
+# iOS 16 and later use the rootless jailbreak layout on supported devices.
+TARGET ?= iphone:clang:17.0:16.0
+THEOS_PACKAGE_SCHEME ?= rootless
+export TARGET THEOS_PACKAGE_SCHEME
+
 export DEBUG = 0
 export FINALPACKAGE = 1
-
-export PREFIX = $(THEOS)/toolchain/Xcode11.xctoolchain/usr/bin/
 
 INSTALL_TARGET_PROCESSES = SpringBoard
 

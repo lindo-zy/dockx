@@ -1,6 +1,6 @@
 #import "DXCell.h"
 #import "DXShortcutsGenerator.h"
-#import <RocketBootstrap/rocketbootstrap.h>
+#import <rocketbootstrap/rocketbootstrap.h>
 
 typedef NS_ENUM(NSInteger, direction) {
     Down = 0, DownRight = 1,

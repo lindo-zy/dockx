@@ -1,5 +1,8 @@
 ARCHS = arm64 arm64e
 
+TARGET ?= iphone:clang:17.0:16.0
+THEOS_PACKAGE_SCHEME ?= rootless
+
 include $(THEOS)/makefiles/common.mk
 
 BUNDLE_NAME = DockXPrefs

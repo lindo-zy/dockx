@@ -3,7 +3,7 @@
 #import "DXShared.h"
 #import "DXToastWindowController.h"
 #import "DXHelper.h"
-#import <SparkColourPicker/SparkColourPickerUtils.h>
+#import <SparkColourPickerUtils.h>
 
 
 id delegate;
@@ -879,7 +879,7 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
     //CGPoint pt =[dv convertPoint:[touch locationInView:self.window] fromView:self];
     // NSIndexPath *cidx = [dv.dockx indexPathForItemAtPoint:[touch locationInView:touch.window]];
     
-    if (preferencesBool(kEnabledkey,YES) && (preferencesBool(kEnabledShootingStarkey, NO))  && !isTrackPadMode && isPossibleDraggingForShootingStar && !UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation)){
+    if (preferencesBool(kEnabledkey,YES) && (preferencesBool(kEnabledShootingStarkey, NO))  && !isTrackPadMode && isPossibleDraggingForShootingStar && !UIInterfaceOrientationIsLandscape(DXCurrentInterfaceOrientation())){
         isPossibleDraggingForShootingStar = NO;
         //isDraggedGesture = NO;
         
@@ -1003,7 +1003,7 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
     %orig;
     if (preferencesBool(kEnabledkey,YES)){
         self.dockView.dockx.hidden = self.dockView.centerDockItem ? !self.dockView.centerDockItem.view.hidden : NO;
-        UIInterfaceOrientation orientation = [UIApplication sharedApplication].statusBarOrientation;
+        UIInterfaceOrientation orientation = DXCurrentInterfaceOrientation();
         
         if (UIInterfaceOrientationIsLandscape(orientation)){
             self.dockView.dockx.hidden = YES;
@@ -1113,7 +1113,7 @@ static void reloadPrefs() {
     
     isPagingEnabled =  preferencesBool(kPagingkey, YES);
     shouldPerformBatchUpdate = NO;
-    spongebobEntropy = preferencesInt(kSpongebobEntropyKey, DXStudlyCapsTypeRandom);
+    spongebobEntropy = (DXStudlyCapsType)preferencesInt(kSpongebobEntropyKey, DXStudlyCapsTypeRandom);
     /*
      if (dockView){
      [UIView performWithoutAnimation:^{

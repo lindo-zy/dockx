@@ -1,4 +1,4 @@
-#import <RocketBootstrap/rocketbootstrap.h>
+#import <rocketbootstrap/rocketbootstrap.h>
 
 @interface DXServer : NSObject{
     CPDistributedMessagingCenter * _messagingCenter;
@@ -10,4 +10,3 @@
 -(NSDictionary *)setAutoCapitalizationValue:(NSString *)name withUserInfo:(NSDictionary *)userInfo;
 -(NSDictionary *)runCommand:(NSString *)name withUserInfo:(NSDictionary *)userInfo;
 @end
-

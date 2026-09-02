@@ -9,7 +9,6 @@
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import <dlfcn.h>
-#import <NSTask.h>
 
 @implementation DXCollectionView
 
@@ -655,7 +654,7 @@
 - (void)keyboardRotated:(NSNotification *)notification {
     
     if (toggledOn){
-        UIInterfaceOrientation orientation = [UIApplication sharedApplication].statusBarOrientation;
+        UIInterfaceOrientation orientation = DXCurrentInterfaceOrientation();
         isLandscape = UIInterfaceOrientationIsLandscape(orientation);
         if (self.refreshView){
             //HBLogDebug(@"&&&&&&&&&& keyboardRotated shouldPerformBatchUpdate: %d", shouldPerformBatchUpdate?1:0);
@@ -2170,14 +2169,7 @@
             if (!self.dockxCenter) self.dockxCenter = [self IPCCenterNamed:kIPCCenterDockX];
             [self.dockxCenter sendMessageAndReceiveReplyName:@"runCommand" userInfo:@{@"value":cmd}];
         }else{
-            NSMutableArray *taskArgs = [[NSMutableArray alloc] init];
-            taskArgs = [NSMutableArray arrayWithObjects:@"-c", cmd, nil];
-            //taskArgs = [NSMutableArray arrayWithObjects:@"-c", @"stb -m $(date +'%T')", nil];
-            NSTask * task = [[NSTask alloc] init];
-            [task setLaunchPath:@"/bin/bash"];
-            //[task setCurrentDirectoryPath:@"/"];
-            [task setArguments:taskArgs];
-            [task launch];
+            DXRunShellCommand(cmd);
             
         }
     }
@@ -3370,8 +3362,7 @@
 }
 
 -(UIWindow*)keyWindow{
-    NSPredicate *isKeyWindow = [NSPredicate predicateWithFormat:@"isKeyWindow == YES"];
-    return [[[UIApplication sharedApplication] windows] filteredArrayUsingPredicate:isKeyWindow].firstObject;
+    return DXKeyWindow();
 }
 
 -(void)copyLogActionLP:(UILongPressGestureRecognizer *)recognizer{
@@ -3655,7 +3646,7 @@
     NSString* selectorName = ((NSArray *)_shortcuts[kselectors])[cellIndex];
     
     UIImage* image;
-    NSMutableAttributedString *imageOfName = [[NSMutableAttributedString alloc] initWithString:@""];
+    NSAttributedString *imageOfName = [[NSMutableAttributedString alloc] initWithString:@""];
     
     
     if ([selectorName isEqualToString:@"autoCorrectionAction:"]){

@@ -340,7 +340,7 @@ typedef enum PSCellType {
 @end
 
 
-@interface WKWebView : UIWebView
+@interface WKWebView : NSObject
 -(void)evaluateJavaScript:(id)arg1 completionHandler:(/*^block*/id)arg2;
 @end
 
@@ -357,5 +357,4 @@ typedef enum PSCellType {
    return [[NSMutableAttributedString alloc] initWithString:self];
 }
 @end
-
 

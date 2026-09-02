@@ -1,4 +1,4 @@
-#import <RocketBootstrap/rocketbootstrap.h>
+#import <rocketbootstrap/rocketbootstrap.h>
 
 @interface UIWindow ()
 - (void)_setSecure:(BOOL)arg1;
@@ -27,4 +27,3 @@
 -(BOOL)_ignoresHitTest;
 -(UIColor *)convertStringToColor:(NSString *)colorname;
 @end
-

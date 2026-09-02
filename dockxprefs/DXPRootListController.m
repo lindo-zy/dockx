@@ -53,11 +53,7 @@ static NSBundle *tweakBundle;
     searchController.searchBar.placeholder = LOCALIZED(@"SEARCHBAR_PLACEHOLDER");
     [searchController.searchBar setImage:[DXHelper imageForDockXWithPlaceholder:YES] forSearchBarIcon:UISearchBarIconSearch state:UIControlStateNormal];
     
-    if (@available(iOS 13.0, *)){
-        searchController.dimsBackgroundDuringPresentation = NO;
-    } else {
-        searchController.obscuresBackgroundDuringPresentation = NO;
-    }
+    searchController.obscuresBackgroundDuringPresentation = NO;
     
     if (@available(iOS 11.0, *)){
         self.navigationItem.searchController = searchController;
@@ -77,7 +73,7 @@ static NSBundle *tweakBundle;
     
     
     UIImage *headerImage = [[UIImage alloc]
-                            initWithContentsOfFile:[[NSBundle bundleWithPath:@"/Library/PreferenceBundles/DockXPrefs.bundle"] pathForResource:@"DockX512" ofType:@"png"]];
+                            initWithContentsOfFile:[[NSBundle bundleWithPath:bundlePath] pathForResource:@"DockX512" ofType:@"png"]];
     UIImageView *imageView = [[UIImageView alloc] initWithFrame:Imageframe];
     [imageView setImage:headerImage];
     [imageView setContentMode:UIViewContentModeScaleAspectFit];

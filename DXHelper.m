@@ -8,9 +8,9 @@
 
 +(UIImage *)imageForDockXWithPlaceholder:(BOOL)placeholder{
     if (placeholder){
-        return [UIImage imageWithContentsOfFile:@"/Library/PreferenceBundles/DockXPrefs.bundle/DockX_Placeholder.png"];
+        return [UIImage imageWithContentsOfFile:[bundlePath stringByAppendingPathComponent:@"DockX_Placeholder.png"]];
     }
-    return [UIImage imageWithContentsOfFile:@"/Library/PreferenceBundles/DockXPrefs.bundle/DockX.png"];
+    return [UIImage imageWithContentsOfFile:[bundlePath stringByAppendingPathComponent:@"DockX.png"]];
 }
 
 +(UIImage *)imageForName:(NSString *)imageName withSystemColor:(BOOL)withSystemColor completion:(void (^)(BOOL isThirteen, BOOL isCustomImagePath))handler{
@@ -149,4 +149,3 @@
     return [tweakBundle localizedStringForKey:actionName value:@"" table:nil];
 }
 @end
-

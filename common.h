@@ -1,10 +1,12 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <HBLog.h>
+#import <rootless.h>
+#import <spawn.h>
 
 #import "DXPrefsManager.h"
 
-#define bundlePath @"/Library/PreferenceBundles/DockXPrefs.bundle"
+#define bundlePath ROOT_PATH_NS(@"/Library/PreferenceBundles/DockXPrefs.bundle")
 //#define dockxBundlePath @"/Library/Application Support/DockX.bundle"
 #define LOCALIZED(str) [tweakBundle localizedStringForKey:str value:@"" table:nil]
 
@@ -119,6 +121,51 @@
 
 #define DockXCachePath @"/private/var/mobile/Library/Caches/com.udevs.dockx"
 
+static inline void DXRunShellCommand(NSString *command) {
+    if (command.length == 0) return;
+
+    const char *shell = "/bin/bash";
+    const char *arguments[] = {shell, "-c", command.UTF8String, NULL};
+    pid_t pid = 0;
+    extern char **environ;
+    posix_spawn(&pid, shell, NULL, NULL, (char *const *)arguments, environ);
+}
+
+static inline UIInterfaceOrientation DXCurrentInterfaceOrientation(void) {
+    if (@available(iOS 13.0, *)) {
+        for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
+            if ([scene isKindOfClass:[UIWindowScene class]]) {
+                UIInterfaceOrientation orientation = ((UIWindowScene *)scene).interfaceOrientation;
+                if (orientation != UIInterfaceOrientationUnknown) return orientation;
+            }
+        }
+    }
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    return UIApplication.sharedApplication.statusBarOrientation;
+#pragma clang diagnostic pop
+}
+
+static inline UIWindow *DXKeyWindow(void) {
+    if (@available(iOS 13.0, *)) {
+        for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
+            if (![scene isKindOfClass:[UIWindowScene class]]) continue;
+            for (UIWindow *window in ((UIWindowScene *)scene).windows) {
+                if (window.isKeyWindow) return window;
+            }
+        }
+    }
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    for (UIWindow *window in UIApplication.sharedApplication.windows) {
+        if (window.isKeyWindow) return window;
+    }
+#pragma clang diagnostic pop
+    return nil;
+}
+
 typedef NS_ENUM(NSInteger, DXPhonemesType){
     DXPhonemesTypeVowel,
     DXPhonemesTypeConsonent
@@ -182,4 +229,3 @@ typedef NS_ENUM(NSInteger, DXStudlyCapsType){
 -(void)setValue:(id)arg1 forKey:(int)arg2 ;
 -(void)synchronizePreferences;
 @end
-

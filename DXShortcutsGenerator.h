@@ -1,10 +1,12 @@
-#define copyLogDylib @"/Library/MobileSubstrate/DynamicLibraries/CopyLog.dylib"
-#define translomaticDylib @"/Library/MobileSubstrate/DynamicLibraries/Translomatic.dylib"
-#define wasabiDylib @"/Library/MobileSubstrate/DynamicLibraries/Wasabi.dylib"
-#define pasitheaDylib @"/Library/MobileSubstrate/DynamicLibraries/Pasithea2.dylib"
-#define copypastaDylib @"/Library/MobileSubstrate/DynamicLibraries/Copypasta.dylib"
-#define loupeDylib @"/Library/MobileSubstrate/DynamicLibraries/Loupe.dylib"
-#define tranzloDylib @"/Library/MobileSubstrate/DynamicLibraries/Tranzlo.dylib"
+#import <rootless.h>
+
+#define copyLogDylib ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/CopyLog.dylib")
+#define translomaticDylib ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Translomatic.dylib")
+#define wasabiDylib ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Wasabi.dylib")
+#define pasitheaDylib ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Pasithea2.dylib")
+#define copypastaDylib ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Copypasta.dylib")
+#define loupeDylib ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Loupe.dylib")
+#define tranzloDylib ROOT_PATH_NS(@"/Library/MobileSubstrate/DynamicLibraries/Tranzlo.dylib")
 
 @interface DXShortcutsGenerator : NSObject
 @property (nonatomic, assign) BOOL copyLogDylibExist;
@@ -29,4 +31,3 @@
 -(NSArray *)keyboardTypeLabel;
 -(NSArray *)keyboardTypeData;
 @end
-

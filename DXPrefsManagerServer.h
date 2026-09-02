@@ -1,4 +1,4 @@
-#import <RocketBootstrap/rocketbootstrap.h>
+#import <rocketbootstrap/rocketbootstrap.h>
 
 @interface DXPrefsManagerServer : NSObject{
     CPDistributedMessagingCenter * _messagingCenter;
@@ -11,4 +11,3 @@
 -(NSDictionary *)removeKey:(NSString *)name withUserInfo:(NSDictionary *)userInfo;
 -(void)postChangedNotification;
 @end
-
