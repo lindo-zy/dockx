@@ -1,54 +1,158 @@
-name: Build and Release
+name: Build DockX RootHide
 
 on:
   push:
+    branches:
+      - main
+      - master
     tags:
-      - 'v*'  # 当推送 v 开头的标签时触发
-  workflow_dispatch:  # 允许手动触发
+      - 'v*'
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: dockx-roothide-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: RootHide packages (iOS 16 and iOS 17)
+    runs-on: macos-14
+
+    defaults:
+      run:
+        working-directory: .
 
     steps:
-      # 1. 检出代码
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup RootHide Theos
+        uses: waruhachi/theos-action@v2.4.6
         with:
-          fetch-depth: 0  # 拉取完整历史，便于 --generate-notes 生成完整 Release Notes
+          theos-src: roothide/theos
+          sdks-src: xybp888/iOS-SDKs
 
-      # 2. 设置构建环境（根据你的项目调整）
-      - name: Set up build environment
+      - name: Verify toolchain
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential debhelper devscripts
+          set -euo pipefail
+          test -d "${THEOS}"
+          test -d "${THEOS}/sdks/iPhoneOS16.5.sdk"
+          test -x "${THEOS}/bin/ldid" || command -v ldid
+          xcodebuild -version
+          make --version | head -n 1
+          bash -n build-roothide-ios.sh
+          echo "Using THEOS=${THEOS}"
 
-      # 3. 构建 Debian 包（根据你的项目调整）
-      - name: Build Debian package
+      - name: Build package
+        shell: bash
+        env:
+          THEOS_PACKAGE_SCHEME: roothide
         run: |
-          # 这里替换成你实际的构建命令
-          # 示例：如果是用 dpkg-buildpackage
-          dpkg-buildpackage -us -uc -b
-          
-          # 或者如果是自定义构建脚本
-          # ./build.sh
-          
-          # 创建存放构建产物的目录
-          mkdir -p release-assets
-          
-          # 将构建好的 .deb 文件复制到 release-assets 目录
-          # 根据实际情况调整路径
-          cp ../*.deb release-assets/ || echo "No .deb files in parent directory"
-          # 如果 .deb 在当前目录，用这行：
-          # cp *.deb release-assets/
+          set -euo pipefail
+          ./build-roothide-ios.sh
 
-      # 4. 列出构建产物（调试用）
-      - name: List built assets
+      - name: Verify and rename packages
+        shell: bash
         run: |
-          echo "Contents of release-assets:"
-          ls -la release-assets/ || echo "Directory not found"
+          set -euo pipefail
+          shopt -s nullglob
+          
+          # 获取版本号（从标签或使用默认值）
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF_NAME" ]; then
+            VERSION="latest"
+          fi
+          
+          for ios in ios16 ios17; do
+            packages=(packages/$ios/*.deb)
+            if (( ${#packages[@]} != 1 )); then
+              echo "Expected exactly one $ios package, found ${#packages[@]}." >&2
+              exit 1
+            fi
+            package="${packages[0]}"
+            test -s "$package"
+            
+            # 重命名为更清晰的格式
+            new_name="DockX-RootHide-${ios}-${VERSION}.deb"
+            mv "$package" "packages/$ios/$new_name"
+            echo "Package: packages/$ios/$new_name"
+          done
 
-      # 5. 创建或更新 GitHub Release（修复后的核心步骤）
+      - name: Upload iOS 16 Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: dockx-roothide-ios16
+          path: packages/ios16/*.deb
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload iOS 17 Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: dockx-roothide-ios17
+          path: packages/ios17/*.deb
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Prepare release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          
+          # 查找所有 .deb 文件
+          deb_files=(release-assets/*/*.deb)
+          
+          if (( ${#deb_files[@]} < 2 )); then
+            echo "Expected at least two Debian packages, found ${#deb_files[@]}." >&2
+            exit 1
+          fi
+          
+          # 复制到根目录，使用有意义的文件名
+          for package in "${deb_files[@]}"; do
+            # 获取父目录名作为标识符
+            dir_name="$(basename "$(dirname "$package")")"
+            base_name="$(basename "$package")"
+            # 如果文件名中没有版本号，从标签获取
+            if [[ ! "$base_name" =~ \.v?[0-9]+\.[0-9]+\.[0-9]+\.deb$ ]]; then
+              version="${GITHUB_REF_NAME#v}"
+              # 构建新文件名，保持原文件名的可读性
+              if [[ "$base_name" =~ DockX-RootHide-(ios[0-9]+)-.*\.deb$ ]]; then
+                ios="${BASH_REMATCH[1]}"
+                new_name="DockX-RootHide-${ios}-${version}.deb"
+              else
+                # 如果原文件名不符合预期，使用目录名
+                new_name="${dir_name}-${base_name}"
+              fi
+              cp "$package" "release-assets/$new_name"
+            else
+              # 如果已经有版本号，直接复制
+              cp "$package" "release-assets/$base_name"
+            fi
+          done
+          
+          echo "Final release assets:"
+          ls -l release-assets/*.deb
+
       - name: Create or update GitHub Release
         shell: bash
         env:
@@ -56,44 +160,26 @@ jobs:
         run: |
           set -euo pipefail
           
-          # ============================================
-          # 修复：确保在 git 仓库中（解决 fatal: not a git repository）
-          # ============================================
+          # 确保在 git 仓库中
           if [ ! -d ".git" ]; then
-            echo "Initializing git repository for gh context..."
             git init
             git config user.email "actions@github.com"
             git config user.name "GitHub Actions"
-            # 添加远程源，避免 gh 可能出现的警告
-            git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git" 2>/dev/null || true
           fi
           
-          # 获取标签名
           tag="${GITHUB_REF_NAME}"
-          
-          # ============================================
-          # 修复：使用 nullglob 避免空匹配时产生字面字符串
-          # ============================================
-          shopt -s nullglob
           assets=(release-assets/*.deb)
-          shopt -u nullglob
           
           # 确保有资源要上传
           if [ ${#assets[@]} -eq 0 ]; then
-            echo "::error::No .deb assets found in release-assets/!"
-            echo "Current directory contents:"
-            ls -la
-            echo "release-assets contents:"
-            ls -la release-assets/ 2>/dev/null || echo "release-assets/ does not exist"
+            echo "Error: No assets found to upload!" >&2
             exit 1
           fi
           
           echo "Tag: $tag"
           echo "Assets to upload: ${assets[@]}"
           
-          # ============================================
           # 检查发布版本是否存在，然后创建或更新
-          # ============================================
           if gh release view "$tag" >/dev/null 2>&1; then
             echo "Updating existing release: $tag"
             gh release upload "$tag" "${assets[@]}" --clobber
@@ -104,11 +190,48 @@ jobs:
               --generate-notes
           fi
           
-          echo "✅ Release published successfully!"
+          echo "Release published successfully!"
 
-      # 6. （可选）上传构建产物作为 Actions 的工件
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+  # 可选：添加一个 job 来创建预发布版本
+  prerelease:
+    name: Create Prerelease for main branch
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: deb-packages
-          path: release-assets/*.deb
+          path: release-assets
+
+      - name: Prepare assets for prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for package in release-assets/*/*.deb; do
+            dir_name="$(basename "$(dirname "$package")")"
+            base_name="$(basename "$package")"
+            cp "$package" "release-assets/prerelease-${dir_name}-${base_name}"
+          done
+          ls -l release-assets/*.deb
+
+      - name: Create or update prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          prerelease_tag="main-latest"
+          assets=(release-assets/*.deb)
+          
+          if gh release view "$prerelease_tag" >/dev/null 2>&1; then
+            gh release upload "$prerelease_tag" "${assets[@]}" --clobber
+          else
+            gh release create "$prerelease_tag" "${assets[@]}" \
+              --title "DockX Development Build" \
+              --prerelease \
+              --generate-notes
+          fi
