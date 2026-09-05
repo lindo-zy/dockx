@@ -41,8 +41,6 @@ jobs:
         run: |
           set -euo pipefail
           test -d "${THEOS}"
-          # Both packages are built by build-roothide-ios.sh with the
-          # iOS 16.5 SDK; the ios17 package keeps the iOS 15 ABI target.
           test -d "${THEOS}/sdks/iPhoneOS16.5.sdk"
           test -x "${THEOS}/bin/ldid" || command -v ldid
           xcodebuild -version
@@ -58,11 +56,18 @@ jobs:
           set -euo pipefail
           ./build-roothide-ios.sh
 
-      - name: Verify package
+      - name: Verify and rename packages
         shell: bash
         run: |
           set -euo pipefail
           shopt -s nullglob
+          
+          # 获取版本号（从标签或使用默认值）
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF_NAME" ]; then
+            VERSION="latest"
+          fi
+          
           for ios in ios16 ios17; do
             packages=(packages/$ios/*.deb)
             if (( ${#packages[@]} != 1 )); then
@@ -71,8 +76,11 @@ jobs:
             fi
             package="${packages[0]}"
             test -s "$package"
-            file "$package"
-            echo "Package: $package"
+            
+            # 重命名为更清晰的格式
+            new_name="DockX-RootHide-${ios}-${VERSION}.deb"
+            mv "$package" "packages/$ios/$new_name"
+            echo "Package: packages/$ios/$new_name"
           done
 
       - name: Upload iOS 16 Debian package
@@ -110,16 +118,39 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
-          packages=(release-assets/*/*.deb)
-          if (( ${#packages[@]} != 2 )); then
-            echo "Expected two Debian packages, found ${#packages[@]}." >&2
+          
+          # 查找所有 .deb 文件
+          deb_files=(release-assets/*/*.deb)
+          
+          if (( ${#deb_files[@]} < 2 )); then
+            echo "Expected at least two Debian packages, found ${#deb_files[@]}." >&2
             exit 1
           fi
-          for package in "${packages[@]}"; do
-            artifact_name="$(basename "$(dirname "$package")")"
-            package_name="$(basename "$package")"
-            cp "$package" "release-assets/${artifact_name}-${package_name}"
+          
+          # 复制到根目录，使用有意义的文件名
+          for package in "${deb_files[@]}"; do
+            # 获取父目录名作为标识符
+            dir_name="$(basename "$(dirname "$package")")"
+            base_name="$(basename "$package")"
+            # 如果文件名中没有版本号，从标签获取
+            if [[ ! "$base_name" =~ \.v?[0-9]+\.[0-9]+\.[0-9]+\.deb$ ]]; then
+              version="${GITHUB_REF_NAME#v}"
+              # 构建新文件名，保持原文件名的可读性
+              if [[ "$base_name" =~ DockX-RootHide-(ios[0-9]+)-.*\.deb$ ]]; then
+                ios="${BASH_REMATCH[1]}"
+                new_name="DockX-RootHide-${ios}-${version}.deb"
+              else
+                # 如果原文件名不符合预期，使用目录名
+                new_name="${dir_name}-${base_name}"
+              fi
+              cp "$package" "release-assets/$new_name"
+            else
+              # 如果已经有版本号，直接复制
+              cp "$package" "release-assets/$base_name"
+            fi
           done
+          
+          echo "Final release assets:"
           ls -l release-assets/*.deb
 
       - name: Create or update GitHub Release
@@ -130,10 +161,62 @@ jobs:
           set -euo pipefail
           tag="${GITHUB_REF_NAME}"
           assets=(release-assets/*.deb)
+          
+          if [ ${#assets[@]} -eq 0 ]; then
+            echo "No assets found to upload!" >&2
+            exit 1
+          fi
+          
           if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Updating existing release $tag"
             gh release upload "$tag" "${assets[@]}" --clobber
           else
+            echo "Creating new release $tag"
             gh release create "$tag" "${assets[@]}" \
               --title "DockX $tag" \
+              --generate-notes
+          fi
+
+  # 可选：添加一个 job 来创建预发布版本
+  prerelease:
+    name: Create Prerelease for main branch
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Prepare assets for prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for package in release-assets/*/*.deb; do
+            dir_name="$(basename "$(dirname "$package")")"
+            base_name="$(basename "$package")"
+            cp "$package" "release-assets/prerelease-${dir_name}-${base_name}"
+          done
+          ls -l release-assets/*.deb
+
+      - name: Create or update prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          prerelease_tag="main-latest"
+          assets=(release-assets/*.deb)
+          
+          if gh release view "$prerelease_tag" >/dev/null 2>&1; then
+            gh release upload "$prerelease_tag" "${assets[@]}" --clobber
+          else
+            gh release create "$prerelease_tag" "${assets[@]}" \
+              --title "DockX Development Build" \
+              --prerelease \
               --generate-notes
           fi
