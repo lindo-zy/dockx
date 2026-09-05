@@ -19,18 +19,8 @@ permissions:
 
 jobs:
   build:
-    name: ${{ matrix.ios }} RootHide package
+    name: RootHide packages (iOS 16 and iOS 17)
     runs-on: macos-14
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # The iOS 17 package intentionally uses the iOS 16.5 SDK. This is
-          # the same ABI combination validated on the iOS 17.1.2 device.
-          - ios: ios16
-            sdk: '16.5'
-          - ios: ios17
-            sdk: '16.5'
 
     defaults:
       run:
@@ -51,11 +41,13 @@ jobs:
         run: |
           set -euo pipefail
           test -d "${THEOS}"
-          test -d "${THEOS}/sdks/iPhoneOS${{ matrix.sdk }}.sdk"
+          # Both packages are built by build-roothide-ios.sh with the
+          # iOS 16.5 SDK; the ios17 package keeps the iOS 15 ABI target.
+          test -d "${THEOS}/sdks/iPhoneOS16.5.sdk"
           test -x "${THEOS}/bin/ldid" || command -v ldid
           xcodebuild -version
           make --version | head -n 1
-          bash -n build.sh
+          bash -n build-roothide-ios.sh
           echo "Using THEOS=${THEOS}"
 
       - name: Build package
@@ -64,28 +56,38 @@ jobs:
           THEOS_PACKAGE_SCHEME: roothide
         run: |
           set -euo pipefail
-          ./build.sh "${{ matrix.ios }}"
+          ./build-roothide-ios.sh
 
       - name: Verify package
         shell: bash
         run: |
           set -euo pipefail
           shopt -s nullglob
-          packages=(packages/${{ matrix.ios }}/*.deb)
-          if (( ${#packages[@]} != 1 )); then
-            echo "Expected exactly one ${{ matrix.ios }} package, found ${#packages[@]}." >&2
-            exit 1
-          fi
-          package="${packages[0]}"
-          test -s "$package"
-          file "$package"
-          echo "Package: $package"
+          for ios in ios16 ios17; do
+            packages=(packages/$ios/*.deb)
+            if (( ${#packages[@]} != 1 )); then
+              echo "Expected exactly one $ios package, found ${#packages[@]}." >&2
+              exit 1
+            fi
+            package="${packages[0]}"
+            test -s "$package"
+            file "$package"
+            echo "Package: $package"
+          done
 
-      - name: Upload Debian package
+      - name: Upload iOS 16 Debian package
         uses: actions/upload-artifact@v4
         with:
-          name: dockx-roothide-${{ matrix.ios }}
-          path: packages/${{ matrix.ios }}/*.deb
+          name: dockx-roothide-ios16
+          path: packages/ios16/*.deb
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload iOS 17 Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: dockx-roothide-ios17
+          path: packages/ios17/*.deb
           if-no-files-found: error
           retention-days: 14
 

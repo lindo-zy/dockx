@@ -291,8 +291,6 @@ sPonGeBob teXt - select all and sPonGeBob";
 "GESTURES" = "Gestures";
 "LONG_PRESS" = "Long Press";
 "DOUBLE_TAP" = "Double Tap";
-"SHOOTING_STAR" = "Shooting Star";
-"FOOTER_SHOOTING_STAR" = "\"Shooting Star\" is a swiping down gesture from the keyboard towards any shortcut.";
 
 //=====================INSERT TEXT BEHAVIOR=====================
 "SINGLE_TAP" = "Single Tap";

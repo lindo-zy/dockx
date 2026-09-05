@@ -1,7 +1,7 @@
 Package: com.lindo.dockx
 Name: DockX
 Depends: mobilesubstrate, preferenceloader, firmware(>=14.0)
-Version: 2.7.0
+Version: 2.7.3
 Architecture: iphoneos-arm
 Description: Pasteboard shortcuts on your keyboard dock!
 Maintainer: lindo

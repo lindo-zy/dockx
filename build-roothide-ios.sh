@@ -23,28 +23,17 @@ fi
 
 PACKAGE_ID="$(awk -F': ' '/^Package:/{print $2; exit}' "$ROOT_DIR/control")"
 PACKAGE_VERSION="$(awk -F': ' '/^Version:/{print $2; exit}' "$ROOT_DIR/control")"
-
 if [[ -z "$PACKAGE_ID" || -z "$PACKAGE_VERSION" ]]; then
     echo "error: Package or Version is missing from $ROOT_DIR/control" >&2
     exit 1
 fi
 
-usage() {
-    echo "Usage: $0 [ios16|ios17|all]"
-}
+if [[ ! "$PACKAGE_VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+    echo "error: Version must use MAJOR.MINOR.PATCH format: $PACKAGE_VERSION" >&2
+    exit 1
+fi
 
-BUILD_TARGET="${1:-all}"
-case "$BUILD_TARGET" in
-    ios16|ios17|all) ;;
-    -h|--help)
-        usage
-        exit 0
-        ;;
-    *)
-        usage >&2
-        exit 1
-        ;;
-esac
+NEXT_VERSION="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.$((10#${BASH_REMATCH[3]} + 1))"
 
 build_one() {
     local label="$1"
@@ -52,7 +41,7 @@ build_one() {
     local deployment_version="$3"
     local sdk_path="$THEOS/sdks/iPhoneOS${sdk_version}.sdk"
     local output_dir="$ROOT_DIR/packages/$label"
-    local output_path="$output_dir/${PACKAGE_ID}_${PACKAGE_VERSION}_${label}_iphoneos-arm64e.deb"
+    local output_path="$output_dir/${PACKAGE_ID}_${NEXT_VERSION}_${label}_iphoneos-arm64e.deb"
 
     if [[ ! -d "$sdk_path" ]]; then
         echo "error: required SDK not found: $sdk_path" >&2
@@ -69,14 +58,14 @@ build_one() {
         cd "$ROOT_DIR"
         THEOS_PACKAGE_SCHEME=roothide \
             TARGET="iphone:clang:${sdk_version}:${deployment_version}" \
-            "$MAKE_BIN" package FINALPACKAGE=1 PACKAGE_VERSION="$PACKAGE_VERSION"
+            "$MAKE_BIN" package FINALPACKAGE=1 PACKAGE_VERSION="$NEXT_VERSION"
     )
 
     mkdir -p "$output_dir"
     find "$output_dir" -maxdepth 1 -type f -name '*.deb' -delete 2>/dev/null || true
 
     local package_path
-    package_path="$(find "$ROOT_DIR/packages" -maxdepth 1 -type f -name "${PACKAGE_ID}_${PACKAGE_VERSION}_*.deb" -print -quit)"
+    package_path="$(find "$ROOT_DIR/packages" -maxdepth 1 -type f -name "${PACKAGE_ID}_${NEXT_VERSION}_*.deb" -print -quit)"
     if [[ -z "$package_path" ]]; then
         echo "error: package was not produced for $label" >&2
         exit 1
@@ -86,19 +75,28 @@ build_one() {
     echo "==> Output: $output_path"
 }
 
-case "$BUILD_TARGET" in
-    ios16)
-        build_one ios16 16.5 16.0
-        ;;
-    ios17)
-        # Keep the iOS 17 build compatible with the reference package:
-        # build against the iOS 16 SDK while retaining iOS 15+ ABI support.
-        build_one ios17 16.5 15.0
-        ;;
-    all)
-        build_one ios16 16.5 16.0
-        build_one ios17 16.5 15.0
-        ;;
-esac
+build_one ios16 16.5 16.0
+# Keep the iOS 17 build compatible with the reference package:
+# build against the iOS 16 SDK while retaining iOS 15+ ABI support.
+build_one ios17 16.5 15.0
 
-echo "==> Build completed successfully"
+# Persist the version only after both platform builds have completed.
+CONTROL_TMP="$(mktemp "$ROOT_DIR/control.tmp.XXXXXX")"
+trap 'rm -f "$CONTROL_TMP"' EXIT
+
+awk -v next_version="$NEXT_VERSION" '
+    BEGIN { updated = 0 }
+    /^Version:/ {
+        print "Version: " next_version
+        updated = 1
+        next
+    }
+    { print }
+    END {
+        if (!updated) exit 1
+    }
+' "$ROOT_DIR/control" > "$CONTROL_TMP"
+mv "$CONTROL_TMP" "$ROOT_DIR/control"
+trap - EXIT
+
+echo "==> Build completed successfully: $PACKAGE_VERSION -> $NEXT_VERSION"

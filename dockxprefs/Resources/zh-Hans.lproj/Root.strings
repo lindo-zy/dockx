@@ -13,12 +13,11 @@
 "FOOTER_SHORTCUT_NUM" = "设置每页显示的快捷方式数量。";
 "MANAGE_SHORTCUTS" = "管理快捷方式";
 "DOUBLE_TAP" = "双击";
-"SHOOTING_STAR" = "流星手势";
 "FOOTER_DISPLAY_STYLE" = "设置快捷方式的显示样式。";
 "FOOTER_SWIPE_SPACE_BAR_TOGGLE_BARMOJI" = "允许从空格键向上滑动，在 DockX 与 Barmoji 之间切换。将手指从空格键向上滑到键盘字母区域，短暂停留后松开即可。";
 "ANSWER_YES" = "是";
 "ANSWER_NO" = "否";
-"FOOTER_DOCK_MODE" = "设置首选的键盘 Dock 模式。";
+"FOOTER_DOCK_MODE" = "设置键盘 Dock 模式。";
 "DEFAULT" = "默认";
 "DICTATION_ONLY" = "仅听写";
 "GLOBE_ONLY" = "仅地球键";
@@ -42,9 +41,9 @@
 "ADVANCED" = "高级";
 "ADVANCED_SETTINGS" = "高级设置";
 "DEVELOPMENT" = "开发";
-"SUPPORT" = "支持开发";
+"SUPPORT" = "支持开发者";
 "CONTACT" = "联系作者";
 "TWITTER" = "Twitter";
 "REDDIT" = "Reddit";
-"FOOTER_CREATED" = "作者：udevs";
+"FOOTER_CREATED" = "由 udevs 创建";
 "FOOTER_CREDITS" = "特别感谢\nAransh";

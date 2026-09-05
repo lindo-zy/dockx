@@ -12,7 +12,6 @@ static NSBundle *tweakBundle;
         NSMutableArray *snippetEntrySpecifiers = [[NSMutableArray alloc] init];
         
         PSSpecifier *gestureTypeGroup = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"GESTURES") target:nil set:nil get:nil detail:nil cell:PSGroupCell edit:nil];
-        [gestureTypeGroup setProperty:LOCALIZED(@"FOOTER_SHOOTING_STAR") forKey:@"footerText"];
         [snippetEntrySpecifiers addObject:gestureTypeGroup];
 
         PSSpecifier *longPressSpec = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"LONG_PRESS") target:nil set:nil get:nil detail:NSClassFromString(@"DXPGesturePickerController") cell:PSLinkListCell edit:nil];
@@ -22,12 +21,6 @@ static NSBundle *tweakBundle;
         PSSpecifier *doubleTapSpec = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"DOUBLE_TAP") target:nil set:nil get:nil detail:NSClassFromString(@"DXPGesturePickerController") cell:PSLinkListCell edit:nil];
         [doubleTapSpec setProperty:LOCALIZED(@"DOUBLE_TAP") forKey:@"label"];
         [snippetEntrySpecifiers addObject:doubleTapSpec];
-        
-        PSSpecifier *shootingStarSpec = [PSSpecifier preferenceSpecifierNamed:LOCALIZED(@"SHOOTING_STAR") target:nil set:nil get:nil detail:NSClassFromString(@"DXPGesturePickerController") cell:PSLinkListCell edit:nil];
-        [shootingStarSpec setProperty:LOCALIZED(@"SHOOTING_STAR") forKey:@"label"];
-        [snippetEntrySpecifiers addObject:shootingStarSpec];
-        
-    
         
         _specifiers = snippetEntrySpecifiers;
         
@@ -51,9 +44,6 @@ static NSBundle *tweakBundle;
             break;
         case 1:
             actionViewController.keyID = kCustomActionsDTkey;
-            break;
-        case 2:
-            actionViewController.keyID = kCustomActionsSTkey;
             break;
         default:
             actionViewController.keyID = kCustomActionskey;

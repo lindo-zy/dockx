@@ -286,8 +286,6 @@ sPonGeBob teXt - select all and sPonGeBob";
 "GESTURES" = "手勢";
 "LONG_PRESS" = "長按";
 "DOUBLE_TAP" = "點兩下";
-"SHOOTING_STAR" = "流星手勢";
-"FOOTER_SHOOTING_STAR" = "\"流星手勢\" 是從鍵盤向任一捷徑下滑的手勢。";
 
 //=====================INSERT TEXT BEHAVIOR=====================
 "SINGLE_TAP" = "點擊";

@@ -10,6 +10,24 @@
 #import <objc/message.h>
 #import <dlfcn.h>
 
+static BOOL DXIsHiddenShortcutSelector(NSString *selector) {
+    return [selector isEqualToString:@"runCommandAction:"] ||
+           [selector isEqualToString:@"spongebobAction:"];
+}
+
+static BOOL DXShortcutCacheContainsHiddenSelectors(NSDictionary *cache) {
+    NSArray *shortcutGroups = cache[@"shortcuts"];
+    if (![shortcutGroups isKindOfClass:[NSArray class]] || shortcutGroups.count < 3) {
+        return NO;
+    }
+    for (NSString *selector in shortcutGroups[2]) {
+        if (DXIsHiddenShortcutSelector(selector)) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
 @implementation DXCollectionView
 
 - (instancetype)init{
@@ -34,7 +52,7 @@
         // shortcut order or keyboard types.  On iOS 17 the collection view can
         // outlive the Settings controller, so a stale cache otherwise masks the
         // newly written configuration.
-        if (prefs[kCachekey] && !prefs[kShortcutskey] && !prefs[kKeyboardTypekey]){
+        if (prefs[kCachekey] && !DXShortcutCacheContainsHiddenSelectors(prefs[kCachekey]) && !prefs[kShortcutskey] && !prefs[kKeyboardTypekey]){
             NSDictionary *cache = prefs[kCachekey];
             self.shortcuts = cache[@"shortcuts"];
             self.fullshortcuts = cache[@"fullshortcuts"];
@@ -77,6 +95,9 @@
             if (prefs[@"shortcuts"]){
                 
                 for (NSDictionary *item in prefs[@"shortcuts"][0]){
+                    if (DXIsHiddenShortcutSelector(item[@"selector"])){
+                        continue;
+                    }
                     if ([item[@"selector"] isEqualToString:@"copyLogAction:"] && !self.shortcutsGenerator.copyLogDylibExist){
                         continue;
                     }
@@ -604,6 +625,7 @@
         for (NSDictionary *item in configuredShortcuts[0]) {
             if (![item isKindOfClass:[NSDictionary class]]) continue;
             NSString *selector = item[@"selector"];
+            if (DXIsHiddenShortcutSelector(selector)) continue;
             if ([selector isEqualToString:@"copyLogAction:"] && !self.shortcutsGenerator.copyLogDylibExist) continue;
             if ([selector isEqualToString:@"translomaticAction:"] && !self.shortcutsGenerator.translomaticDylibExist) continue;
             if ([selector isEqualToString:@"wasabiAction:"] && !self.shortcutsGenerator.wasabiDylibExist) continue;

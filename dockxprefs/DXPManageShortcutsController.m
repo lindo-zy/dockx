@@ -1,7 +1,6 @@
 #import "DXPManageShortcutsController.h"
 #import "DXPCustomActionViewController.h"
 #import "DXPKeyboardTypeOptions.h"
-#import "DXPSnippetEntryController.h"
 #import "DXPInsertTextEntryController.h"
 #import "DXPCursorMoveAndSelectEntryController.h"
 #import "../DXShortcutsGenerator.h"
@@ -10,12 +9,16 @@
 #import "DXPDeleteOptions.h"
 #import "DXPGlobeOptions.h"
 #import "DXPPasteOptions.h"
-#import "DXPSpongebobOptions.h"
 
 static BOOL translomaticInstalled = NO;
 static BOOL tranzloInstalled = NO;
 static UISearchController *searchController;
 static NSBundle *tweakBundle;
+
+static BOOL DXIsHiddenShortcutSelector(NSString *selector) {
+    return [selector isEqualToString:@"runCommandAction:"] ||
+           [selector isEqualToString:@"spongebobAction:"];
+}
 
 
 @implementation DXPManageShortcutsController
@@ -200,12 +203,6 @@ static NSBundle *tweakBundle;
             [kbTypeOptions setRootController: [self rootController]];
             [kbTypeOptions setParentController: [self parentController]];
             [self pushController:kbTypeOptions];
-        }else if ([self.extrasOptions[indexPath.row][@"identifier"] isEqualToString:@"shellCommand"]){
-            DXPSnippetEntryController *snippetEntryController = [[DXPSnippetEntryController alloc] init];
-            snippetEntryController.entryID = @"runCommandAction:";
-            [snippetEntryController setRootController: [self rootController]];
-            [snippetEntryController setParentController: [self parentController]];
-            [self pushController:snippetEntryController];
         }else if ([self.extrasOptions[indexPath.row][@"identifier"] isEqualToString:@"insertText"]){
             DXPInsertTextEntryController *insertTextController = [[DXPInsertTextEntryController alloc] init];
             insertTextController.entryID = @"insertTextAction:";
@@ -282,11 +279,6 @@ static NSBundle *tweakBundle;
             [pasteOptions setRootController: [self rootController]];
             [pasteOptions setParentController: [self parentController]];
             [self pushController:pasteOptions];
-        }else if ([self.extrasOptions[indexPath.row][@"identifier"] isEqualToString:@"spongebob"]){
-            DXPSpongebobOptions *spongebobOptions = [[DXPSpongebobOptions alloc] init];
-            [spongebobOptions setRootController: [self rootController]];
-            [spongebobOptions setParentController: [self parentController]];
-            [self pushController:spongebobOptions];
         }
     }
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
@@ -422,6 +414,9 @@ static NSBundle *tweakBundle;
     NSMutableArray *firstOrderDict = [[NSMutableArray alloc] init];
     
     for (int i = 0; i < [defaultOrderLabel count]; i++){
+        if (DXIsHiddenShortcutSelector(defaultOrderSelector[i])) {
+            continue;
+        }
         if ( i == 0 || i == 6 || i == 35 | i == 36 || i == 37){
             [firstOrderDict addObject: @{
                 @"label" : defaultOrderLabel[i],
@@ -470,6 +465,7 @@ static NSBundle *tweakBundle;
     if (prefs[@"shortcuts"][0]  && ([prefs[@"shortcuts"][0] firstObject] != nil) && !reset){
         NSMutableArray *currentOrderDefault = [prefs[@"shortcuts"][0] mutableCopy];
         for (NSInteger i = 0; i < [currentOrderDefault count]; i++){
+            if (DXIsHiddenShortcutSelector(currentOrderDefault[i][@"selector"])) continue;
             if ([[currentOrderDefault objectAtIndex:i][@"selector"] isEqualToString:@"copyLogAction:"] && !shortcutsGenerator.copyLogDylibExist) continue;
             if ([[currentOrderDefault objectAtIndex:i][@"selector"] isEqualToString:@"translomaticAction:"] && !shortcutsGenerator.translomaticDylibExist) continue;
             if ([[currentOrderDefault objectAtIndex:i][@"selector"] isEqualToString:@"wasabiAction:"] && !shortcutsGenerator.wasabiDylibExist) continue;
@@ -484,6 +480,7 @@ static NSBundle *tweakBundle;
         NSMutableArray *defaultOrderDict = [[NSMutableArray alloc] init];
         
         for (int i = 0 ; i < maxdefaultshortcuts ; i++) {
+            if (DXIsHiddenShortcutSelector(defaultOrderSelector[i])) continue;
             if ([defaultOrderSelector[i] isEqualToString:@"copyLogAction:"] && !shortcutsGenerator.copyLogDylibExist) continue;
             if ([defaultOrderSelector[i] isEqualToString:@"translomaticAction:"] && !shortcutsGenerator.translomaticDylibExist) continue;
             if ([defaultOrderSelector[i] isEqualToString:@"wasabiAction:"] && !shortcutsGenerator.wasabiDylibExist) continue;
@@ -505,6 +502,7 @@ static NSBundle *tweakBundle;
     if (prefs[@"shortcuts"][1]  && ([prefs[@"shortcuts"][1] firstObject] != nil) && !reset){
         NSMutableArray *currentOrderDefault = [prefs[@"shortcuts"][1] mutableCopy];
         for (NSInteger i = 0; i < [currentOrderDefault count]; i++){
+            if (DXIsHiddenShortcutSelector(currentOrderDefault[i][@"selector"])) continue;
             if ([[currentOrderDefault objectAtIndex:i][@"selector"] isEqualToString:@"copyLogAction:"] && !shortcutsGenerator.copyLogDylibExist) continue;
             if ([[currentOrderDefault objectAtIndex:i][@"selector"] isEqualToString:@"translomaticAction:"] && !shortcutsGenerator.translomaticDylibExist) continue;
             if ([[currentOrderDefault objectAtIndex:i][@"selector"] isEqualToString:@"wasabiAction:"] && !shortcutsGenerator.wasabiDylibExist) continue;
@@ -517,6 +515,7 @@ static NSBundle *tweakBundle;
         if (newShortcutsAvailable){
             NSMutableArray *fullOrderDict = [[NSMutableArray alloc] init];
             for (int i = 0 ; i < [defaultOrderLabel count] ; i++) {
+                if (DXIsHiddenShortcutSelector(defaultOrderSelector[i])) continue;
                 if ([[defaultOrderSelector objectAtIndex:i] isEqualToString:@"copyLogAction:"] && !shortcutsGenerator.copyLogDylibExist) continue;
                 if ([[defaultOrderSelector objectAtIndex:i] isEqualToString:@"translomaticAction:"] && !shortcutsGenerator.translomaticDylibExist) continue;
                 if ([[defaultOrderSelector objectAtIndex:i] isEqualToString:@"wasabiAction:"] && !shortcutsGenerator.wasabiDylibExist) continue;
@@ -556,6 +555,7 @@ static NSBundle *tweakBundle;
         NSMutableArray *defaultOrderDict = [[NSMutableArray alloc] init];
         
         for (int i = maxdefaultshortcuts ; i < [defaultOrderLabel count] ; i++) {
+            if (DXIsHiddenShortcutSelector(defaultOrderSelector[i])) continue;
             if ([defaultOrderSelector[i] isEqualToString:@"copyLogAction:"] && !shortcutsGenerator.copyLogDylibExist) continue;
             if ([defaultOrderSelector[i] isEqualToString:@"translomaticAction:"] && !shortcutsGenerator.translomaticDylibExist) continue;
             if ([defaultOrderSelector[i] isEqualToString:@"wasabiAction:"] && !shortcutsGenerator.wasabiDylibExist) continue;
@@ -575,10 +575,10 @@ static NSBundle *tweakBundle;
         self.currentOrder[1] = defaultOrderDict;
     }
     
-    NSArray *extrasOptionsLabel = @[LOCALIZED(@"EXTRAS_KEYBOARD_INPUT_BEHAVIOUR"), LOCALIZED(@"EXTRAS_SHELL_COMMANDS"), LOCALIZED(@"EXTRAS_INSERT_TEXT_CONTENT"), LOCALIZED(@"EXTRAS_PREVIOUS_WORD_BEHAVIOUR"), LOCALIZED(@"EXTRAS_NEXT_WORD_BEHAVIOUR"), LOCALIZED(@"EXTRAS_LINE_START_BEHAVIOUR"), LOCALIZED(@"EXTRAS_LINE_END_BEHAVIOUR"), LOCALIZED(@"EXTRAS_START_OF_PARAGRAPH_BEHAVIOUR"), LOCALIZED(@"EXTRAS_END_OF_PARAGRAPH_BEHAVIOUR"), LOCALIZED(@"EXTRAS_START_OF_SENTENCE_BEHAVIOUR"), LOCALIZED(@"EXTRAS_END_OF_SENTENCE_BEHAVIOUR"), LOCALIZED(@"EXTRAS_DELETE_BEHAVIOUR"), LOCALIZED(@"EXTRAS_DELETE_FORWARD_BEHAVIOUR"), LOCALIZED(@"EXTRAS_GLOBE_BEHAVIOUR"), LOCALIZED(@"EXTRAS_PASTE_BEHAVIOUR"), LOCALIZED(@"EXTRAS_SPONGEBOB_BEHAVIOUR")];
-    NSArray *extrasOptionsID = @[@"keyboardType", @"shellCommand", @"insertText", @"prevWord", @"nextWord", @"lineStart", @"lineEnd", @"startOfParagraph", @"endOfParagraph", @"startOfSentence", @"endOfSentence", @"delete", @"deleteForward", @"globe", @"paste", @"spongebob"];
-    NSArray *extrasOptions12 = @[@"reachable_full", @"KeyGlyph-command-large", @"messages_writeboard", @"UICalloutBarPreviousArrow", @"UICalloutBarNextArrow", @"KeyGlyph-rtlTab-larg", @"KeyGlyph-tab-large", @"KeyGlyph-return-large", @"KeyGlyph-rtlReturn-large", @"UIMovieScrubberEditingGlassLeft", @"UIMovieScrubberEditingGlassRight", @"delete_portrait", @"delete_portrait", @"globe_dockitem-portrait", @"UIButtonBarKeyboardPaste", @"bold_emoji_activity"];
-    NSArray *extrasOptions13 = @[@"number.circle.fill", @"command", @"text.bubble", @"arrow.left.circle.fill", @"arrow.right.circle.fill", @"arrow.left.to.line", @"arrow.right.to.line", @"text.insert", @"text.append", @"decrease.quotelevel", @"increase.quotelevel", @"delete.left", @"delete.right", @"globe", @"doc.on.clipboard", @"circle.grid.3x3"];
+    NSArray *extrasOptionsLabel = @[LOCALIZED(@"EXTRAS_KEYBOARD_INPUT_BEHAVIOUR"), LOCALIZED(@"EXTRAS_INSERT_TEXT_CONTENT"), LOCALIZED(@"EXTRAS_PREVIOUS_WORD_BEHAVIOUR"), LOCALIZED(@"EXTRAS_NEXT_WORD_BEHAVIOUR"), LOCALIZED(@"EXTRAS_LINE_START_BEHAVIOUR"), LOCALIZED(@"EXTRAS_LINE_END_BEHAVIOUR"), LOCALIZED(@"EXTRAS_START_OF_PARAGRAPH_BEHAVIOUR"), LOCALIZED(@"EXTRAS_END_OF_PARAGRAPH_BEHAVIOUR"), LOCALIZED(@"EXTRAS_START_OF_SENTENCE_BEHAVIOUR"), LOCALIZED(@"EXTRAS_END_OF_SENTENCE_BEHAVIOUR"), LOCALIZED(@"EXTRAS_DELETE_BEHAVIOUR"), LOCALIZED(@"EXTRAS_DELETE_FORWARD_BEHAVIOUR"), LOCALIZED(@"EXTRAS_GLOBE_BEHAVIOUR"), LOCALIZED(@"EXTRAS_PASTE_BEHAVIOUR")];
+    NSArray *extrasOptionsID = @[@"keyboardType", @"insertText", @"prevWord", @"nextWord", @"lineStart", @"lineEnd", @"startOfParagraph", @"endOfParagraph", @"startOfSentence", @"endOfSentence", @"delete", @"deleteForward", @"globe", @"paste"];
+    NSArray *extrasOptions12 = @[@"reachable_full", @"messages_writeboard", @"UICalloutBarPreviousArrow", @"UICalloutBarNextArrow", @"KeyGlyph-rtlTab-larg", @"KeyGlyph-tab-large", @"KeyGlyph-return-large", @"KeyGlyph-rtlReturn-large", @"UIMovieScrubberEditingGlassLeft", @"UIMovieScrubberEditingGlassRight", @"delete_portrait", @"delete_portrait", @"globe_dockitem-portrait", @"UIButtonBarKeyboardPaste"];
+    NSArray *extrasOptions13 = @[@"number.circle.fill", @"text.bubble", @"arrow.left.circle.fill", @"arrow.right.circle.fill", @"arrow.left.to.line", @"arrow.right.to.line", @"text.insert", @"text.append", @"decrease.quotelevel", @"increase.quotelevel", @"delete.left", @"delete.right", @"globe", @"doc.on.clipboard"];
     
     NSMutableArray *extrasOptionsDict = [[NSMutableArray alloc] init];
     
