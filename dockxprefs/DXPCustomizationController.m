@@ -46,7 +46,7 @@ static NSBundle *tweakBundle;
         self.navigationItem.hidesSearchBarWhenScrolling = YES;
     }
     
-    NSDictionary *preferences = [NSDictionary dictionaryWithContentsOfFile:kPrefsPath];
+    NSDictionary *preferences = [[DXPrefsManager sharedInstance] readPrefs];
     if(![preferences[@"colorBOOL"] boolValue]){
         [(PSSpecifier *)self.dynamicSpecifiers[@"shortcutstintpicker"] setProperty:@NO forKey:@"enabled"];
         [(PSSpecifier *)self.dynamicSpecifiers[@"toasttintpicker"] setProperty:@NO forKey:@"enabled"];
@@ -72,8 +72,12 @@ static NSBundle *tweakBundle;
 
 -(id)readPreferenceValue:(PSSpecifier*)specifier{
     
-    id value = [super readPreferenceValue:specifier];
     NSString *key = [specifier propertyForKey:@"key"];
+    id value = [super readPreferenceValue:specifier];
+    if (key.length > 0) {
+        id storedValue = [[DXPrefsManager sharedInstance] getValueForKey:key];
+        if (storedValue != nil) value = storedValue;
+    }
     if([key isEqualToString:@"colorBOOL"]){
         [(PSSpecifier *)self.dynamicSpecifiers[@"shortcutstintpicker"] setProperty:value forKey:@"enabled"];
         [(PSSpecifier *)self.dynamicSpecifiers[@"toasttintpicker"] setProperty:value forKey:@"enabled"];
@@ -101,8 +105,12 @@ static NSBundle *tweakBundle;
 
 
 - (void)setPreferenceValue:(id)value specifier:(PSSpecifier *)specifier{
-    [super setPreferenceValue:value specifier:specifier];
     NSString *key = [specifier propertyForKey:@"key"];
+    if (key.length > 0) {
+        [[DXPrefsManager sharedInstance] setValue:value forKey:key];
+    } else {
+        [super setPreferenceValue:value specifier:specifier];
+    }
     if([key isEqualToString:@"colorBOOL"]){
         [(PSSpecifier *)self.dynamicSpecifiers[@"shortcutstintpicker"] setProperty:value forKey:@"enabled"];
         [(PSSpecifier *)self.dynamicSpecifiers[@"toasttintpicker"] setProperty:value forKey:@"enabled"];

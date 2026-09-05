@@ -33,7 +33,6 @@ BOOL shouldPerformBatchUpdate = YES;
 NSString *key;
 BOOL isDraggedGesture = NO;
 UIKeyboardDockView *dockV;
-BOOL isPossibleDraggingForShootingStar = NO;
 BOOL isPagingEnabled = YES;
 BOOL useShortenedLabel = NO;
 NSBundle *tweakBundle;
@@ -103,6 +102,9 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
                     trailing = -5.0f;
                 }
                 break;
+        }
+        if ([dockView respondsToSelector:@selector(barmoji)] && leading < leadingOffsetDefault) {
+            leading = leadingOffsetDefault;
         }
         
         
@@ -231,10 +233,11 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
         if (!preferencesBool(kColorEnabledkey,NO) || (preferencesBool(kColorEnabledkey,NO)  && !preferencesBool(kShortcutsTintEnabled,YES))){
             currentTintColor = dockItem.button.tintColor;
         }
-        if (preferencesInt(kDockModekey, 0) == 1 || preferencesInt(kDockModekey, 0) == 3) return;
         if (preferencesInt(kDedicatedGestureButtonkey, 0) == 1 || preferencesInt(kDedicatedGestureButtonkey, 0) == 3){
-            %orig;
-            if ([dockView respondsToSelector:@selector(barmoji)]){
+            if (preferencesInt(kDockModekey, 0) != 1 && preferencesInt(kDockModekey, 0) != 3) {
+                %orig;
+            }
+            if ([dockView respondsToSelector:@selector(barmoji)] && preferencesInt(kDockModekey, 0) != 1 && preferencesInt(kDockModekey, 0) != 3){
                 if (preferencesInt(kGestureTypekey,0) == 1){
                     singleTapGlobeEnabled = NO;
                     UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(performDockXToggling:)];
@@ -247,8 +250,8 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
                     singleTap.numberOfTapsRequired = 1;
                     [dockItem.button addGestureRecognizer:singleTap];
                 }
+                return;
             }
-            return;
         }
     }
     %orig;
@@ -448,6 +451,9 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
                     trailing = -45;
                     break;
             }
+        }
+        if ([self respondsToSelector:@selector(barmoji)] && leading < leadingOffsetDefault) {
+            leading = leadingOffsetDefault;
         }
         HBLogDebug(@"HANDBIAS AFTER leading: %f, trailing: %f",leading, trailing );
         
@@ -864,10 +870,7 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
             //HBLogDebug(@"Direction: %ld", [self computeDirectionFromTouches]);
             if ([key isEqualToString:@" "] && (dragDirection == 3 || dragDirection == 4 || dragDirection == 5)){
                 isDraggedGesture = YES;
-            }else if (dragDirection == 0 || dragDirection == 1 || dragDirection == 7){
-                isPossibleDraggingForShootingStar = YES;
             }else{
-                isPossibleDraggingForShootingStar = NO;
                 isDraggedGesture = NO;
             }
         }
@@ -877,69 +880,9 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event  {
     //HBLogDebug(@"touchesEnded count: %lu",touches.count);
-    UITouch *touch = [[touches allObjects] firstObject];
     //UIView *endedKey = [self hitTest:[touch locationInView:touch.view] withEvent:event];
     //CGPoint pt =[dv convertPoint:[touch locationInView:self.window] fromView:self];
     // NSIndexPath *cidx = [dv.dockx indexPathForItemAtPoint:[touch locationInView:touch.window]];
-    
-    if (preferencesBool(kEnabledkey,YES) && (preferencesBool(kEnabledShootingStarkey, NO))  && !isTrackPadMode && isPossibleDraggingForShootingStar && !UIInterfaceOrientationIsLandscape(DXCurrentInterfaceOrientation())){
-        isPossibleDraggingForShootingStar = NO;
-        //isDraggedGesture = NO;
-        
-        CGPoint p = [self.window convertPoint:[touch locationInView:touch.window] toView:dockV.dockx];
-        NSIndexPath *idxPath = [dockV.dockx indexPathForItemAtPoint:p];
-        if (idxPath){
-            //HBLogDebug(@"..................INDEXPATH: %@", idxPath);
-            DXCell *cell = (DXCell *)[dockV.dockx cellForItemAtIndexPath:idxPath];
-            
-            HBLogDebug(@"dockV.dockx: %@", dockV.dockx);
-            HBLogDebug(@"cell.btn: %@", cell.btn);
-            NSString *cellIdentifier;
-            BOOL doubleTapEnabled = preferencesBool(kEnabledDoubleTapkey, NO);
-            if (doubleTapEnabled){
-                NSArray *gestures = cell.btn.gestureRecognizers;
-                NSPredicate *resultPredicate = [NSPredicate
-                                                predicateWithFormat:@"SELF.numberOfTapsRequired == %@",
-                                                @1];
-                NSArray *targetsForLongPressUsingGesture = [([[gestures filteredArrayUsingPredicate:resultPredicate] firstObject]) valueForKey:@"_targets"];
-                for (id target in targetsForLongPressUsingGesture){
-                    NSArray *actions = @[NSStringFromSelector([(UIGestureRecognizerTarget *)target action])];
-                    for (NSString *action in actions) {
-                        cellIdentifier = action;
-                    }
-                }
-            }else{
-                for (id target in cell.btn.allTargets){
-                    NSArray *actions = [cell.btn actionsForTarget:target forControlEvent:UIControlEventTouchUpInside];
-                    for (NSString *action in actions) {
-                        cellIdentifier = action;
-                    }
-                }
-            }
-            
-            
-            HBLogDebug(@"cellIdentifier: %@", cellIdentifier);
-            //[dockV.dockx shakeButton:cell.btn];
-            kbImpl = [%c(UIKeyboardImpl) activeInstance];
-            delegate = DXKeyboardInputDelegate(kbImpl);
-            [kbImpl clearInputWithCandidatesCleared:YES];
-            
-            [dockV.dockx activateShootingStarActions:cell.btn];
-            [[NSNotificationCenter defaultCenter] postNotificationName:[NSString stringWithFormat:@"shakeCell-%@", cellIdentifier] object:nil];
-            
-            if ([self respondsToSelector:@selector(clearContinuousPathView)]){
-                [self clearContinuousPathView];
-            }
-            
-            
-            
-            [self touchesCancelled:touches withEvent:event];
-            isDraggedGesture = NO;
-            return;
-        }
-        
-        
-    }
     
     if (preferencesBool(kEnabledkey,YES) && (preferencesInt(kSwipeSpaceBarTogglekey,0) < 1) && [key isEqualToString:@" "] && isDraggedGesture && [dockView respondsToSelector:@selector(barmoji)] && !isTrackPadMode){
         NSTimeInterval elapsedTime = -1.0 * [prevTime timeIntervalSinceNow];
@@ -968,11 +911,9 @@ CGFloat trailingHBLeftOffset = trailingOffsetHandBiasLeftDefault;
             [self clearContinuousPathView];
         }
         [self touchesCancelled:touches withEvent:event];
-        isPossibleDraggingForShootingStar = NO;
         return;
     }
     isDraggedGesture = NO;
-    isPossibleDraggingForShootingStar = NO;
     %orig;
 }
 
@@ -1092,8 +1033,8 @@ static void reloadPrefs(void) {
         
         if (preferencesBool(kShortcutsTintEnabled,YES)) currentTintColor = DXColorFromHex(prefs[@"shortcutstint"], @"#ff0000");
         if (preferencesBool(kToastTintEnabled,YES)) toastTintColor = DXColorFromHex(prefs[@"toasttint"], @"#ff0000");
+        if (preferencesBool(kShortcutsBackgroundTintEnabled,YES)) currentBackgroundTintColor = DXColorFromHex(prefs[@"shortcutsbackgroundtint"], @"#5B5B5B");
         if (preferencesBool(kToastBackgroundTintEnabled,YES)) toastBackgroundTintColor = DXColorFromHex(prefs[@"toastbackgroundtint"], @"#000000");
-        if (preferencesBool(kToastBackgroundTintEnabled,YES)) toastBackgroundTintColor = DXColorFromHex(prefs[@"shortcutsbackgroundtint"], @"#5B5B5B");
     }
     
     toggledOn = preferencesBool(kToggledOnkey,YES);

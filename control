@@ -1,11 +1,11 @@
-Package: com.udevs.dockx
+Package: com.lindo.dockx
 Name: DockX
 Depends: mobilesubstrate, preferenceloader, firmware(>=14.0)
-Version: 2.4.4
+Version: 2.7.0
 Architecture: iphoneos-arm
 Description: Pasteboard shortcuts on your keyboard dock!
-Maintainer: udevs
-Author: udevs
+Maintainer: lindo
+Author: lindo
 Section: Tweaks
 Conflicts: com.restiveconch.actionbar
 Icon: https://udevsharold.github.io/repo/depictions/com.udevs.dockx/icon/icon.png

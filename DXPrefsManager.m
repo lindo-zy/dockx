@@ -105,18 +105,10 @@ static void reloadPrefs(CFNotificationCenterRef center, void *observer, CFString
 
 - (void)setValue:(id)value forKey:(NSString *)key {
     if (key.length == 0) return;
-    CFStringRef appID = (CFStringRef)kIdentifier;
-    CFPreferencesSetAppValue((__bridge CFStringRef)key,
-                              value ? (__bridge CFPropertyListRef)value : NULL,
-                              appID);
-    CFPreferencesAppSynchronize(appID);
-
     NSMutableDictionary *dictionary = [[self readPrefs] mutableCopy] ?: [NSMutableDictionary dictionary];
     if (value) dictionary[key] = value;
     else [dictionary removeObjectForKey:key];
-    [dictionary writeToFile:kPrefsPath atomically:YES];
-    self.prefs = [dictionary copy];
-    [self postChangedNotification];
+    [self writePrefs:dictionary];
 }
 
 - (id)getValueForKey:(NSString *)key fromSandbox:(BOOL)isSandbox {

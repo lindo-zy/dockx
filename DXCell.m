@@ -28,17 +28,4 @@
     return self;
 }
 
--(void)shakeCell:(NSNotification*)notification{
-    CABasicAnimation *shake = [CABasicAnimation animationWithKeyPath:@"position"];
-    [shake setDuration:0.05];
-    [shake setRepeatCount:2];
-    [shake setAutoreverses:YES];
-    [shake setFromValue:[NSValue valueWithCGPoint:
-                         CGPointMake(self.center.x - 5,self.center.y)]];
-    [shake setToValue:[NSValue valueWithCGPoint:
-                       CGPointMake(self.center.x + 5, self.center.y)]];
-    [self.layer removeAllAnimations];
-    [self.layer addAnimation:shake forKey:@"position"];
-}
-
 @end

@@ -59,7 +59,6 @@
 #define kCustomActionsDTkey @"customactionsdt"
 #define kCustomActionsSTkey @"customactionsst"
 #define kEnabledDoubleTapkey @"doubletapBOOL"
-#define kEnabledShootingStarkey @"shootingstarBOOL"
 #define kTopInsetkey @"topinset"
 #define kBottomInsetkey @"bottominset"
 #define kLeftInsetkey @"leftinset"

@@ -389,17 +389,7 @@ static NSBundle *tweakBundle;
 
 
 - (void)writeToFile{
-    
-    PSSpecifier *defaultOrderSpecifier = [PSSpecifier preferenceSpecifierNamed:@"" target:self set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSLinkListCell edit:nil];
-    [defaultOrderSpecifier setProperty:self.currentOrder forKey:@"default"];
-    [defaultOrderSpecifier setProperty:kIdentifier forKey:@"defaults"];
-    [defaultOrderSpecifier setProperty:@"shortcuts" forKey:@"key"];
-    [defaultOrderSpecifier setProperty:@"" forKey:@"label"];
-    [defaultOrderSpecifier setProperty:kPrefsChangedIdentifier forKey:@"PostNotification"];
-    [self setPreferenceValue:self.currentOrder specifier:defaultOrderSpecifier];
-    
-    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)kPrefsChangedIdentifier, NULL, NULL, YES);
-    
+    [[DXPrefsManager sharedInstance] setValue:self.currentOrder forKey:kShortcutskey];
 }
 
 - (void)updateOrder:(BOOL)reset{
@@ -702,4 +692,3 @@ static NSBundle *tweakBundle;
 }
 
 @end
-

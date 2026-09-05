@@ -13,13 +13,7 @@ static NSBundle *tweakBundle;
     if (!_specifiers) {
         _specifiers = [self loadSpecifiersFromPlistName:@"Root" target:self];
         
-        NSArray *dynamicCell = @[@"pyslider", @"timerslider",@"shortcutstintpicker",@"toasttintpicker",@"toastbackgroundtintpicker", @"granularityslider", @"displaytypeselection", @"gesturetypeselection", @"gesturebuttonselection",@"shortcutstintselection", @"toasttintselection", @"toastbackgroundtintselection", @"shortcutsbackgroundtintpicker", @"shortcutsbackgroundtintselection"];
         self.dynamicSpecifiers = (!self.dynamicSpecifiers) ? [[NSMutableDictionary alloc] init] : self.dynamicSpecifiers;
-        for(PSSpecifier *specifier in _specifiers) {
-            if([dynamicCell containsObject:[specifier propertyForKey:@"id"]]) {
-                [self.dynamicSpecifiers setObject:specifier forKey:[specifier propertyForKey:@"id"]];
-            }
-        }
     }
     
     
@@ -29,7 +23,7 @@ static NSBundle *tweakBundle;
  -(void)reloadSpecifiers {
  [super reloadSpecifiers];
  
- NSDictionary *preferences = [NSDictionary dictionaryWithContentsOfFile:kPrefsPath];
+    NSDictionary *preferences = [[DXPrefsManager sharedInstance] readPrefs];
  if(![preferences[@"toastBOOL"] boolValue]) {
  [self removeContiguousSpecifiers:@[self.dynamicSpecifiers[@"pyslider"]] animated:YES];
  [self removeContiguousSpecifiers:@[self.dynamicSpecifiers[@"timerslider"]] animated:YES];
@@ -98,71 +92,14 @@ static NSBundle *tweakBundle;
     //self.addSnippetBtn.tintColor = [UIColor blackColor];
     self.navigationItem.rightBarButtonItem = self.respringBtn;
     
-    NSDictionary *preferences = [[DXPrefsManager sharedInstance] readPrefs];
-    if(![preferences[@"toastBOOL"] boolValue]) {
-        [(PSSpecifier *)self.dynamicSpecifiers[@"pyslider"] setProperty:@NO forKey:@"enabled"];
-        [(PSSpecifier *)self.dynamicSpecifiers[@"timerslider"] setProperty:@NO forKey:@"enabled"];
-        [(PSSpecifier *)self.dynamicSpecifiers[@"displaytypeselection"] setProperty:@NO forKey:@"enabled"];
-        [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"pyslider"] animated:NO];
-        [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"timerslider"] animated:NO];
-        [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"displaytypeselection"] animated:NO];
-    }else if(![preferences[@"enabledSpaceBarScrollingBOOL"] boolValue]){
-        [(PSSpecifier *)self.dynamicSpecifiers[@"granularityslider"] setProperty:@NO forKey:@"enabled"];
-        [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"granularityslider"] animated:NO];
-    }else if([preferences[@"dockmode"] intValue] == 3){
-        [(PSSpecifier *)self.dynamicSpecifiers[@"gesturebuttonselection"] setProperty:@NO forKey:@"enabled"];
-        [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"gesturebuttonselection"] animated:NO];
-    }else if([preferences[@"gesturebutton"] intValue] == 0){
-        [(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] setProperty:@NO forKey:@"enabled"];
-        [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] animated:NO];
-    }
 }
 
 -(id)readPreferenceValue:(PSSpecifier*)specifier{
     NSString *key = [specifier propertyForKey:@"key"];
     id value = [super readPreferenceValue:specifier];
-    if ([key isEqualToString:kEnabledkey]) {
-        id storedValue = [[DXPrefsManager sharedInstance] readPrefs][key];
+    if (key.length > 0) {
+        id storedValue = [[DXPrefsManager sharedInstance] getValueForKey:key];
         if (storedValue != nil) value = storedValue;
-    }
-    if([key isEqualToString:@"toastBOOL"]) {
-        [(PSSpecifier *)self.dynamicSpecifiers[@"pyslider"] setProperty:value forKey:@"enabled"];
-        [(PSSpecifier *)self.dynamicSpecifiers[@"timerslider"] setProperty:value forKey:@"enabled"];
-        [(PSSpecifier *)self.dynamicSpecifiers[@"displaytypeselection"] setProperty:value forKey:@"enabled"];
-        [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"pyslider"] animated:NO];
-        [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"timerslider"] animated:NO];
-        [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"displaytypeselection"] animated:NO];
-    }else if([key isEqualToString:@"enabledSpaceBarScrollingBOOL"]){
-        [(PSSpecifier *)self.dynamicSpecifiers[@"granularityslider"] setProperty:value forKey:@"enabled"];
-        [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"granularityslider"] animated:NO];
-    }else if([key isEqualToString:@"dockmode"]){
-        if ([value intValue] < 3){
-            [(PSSpecifier *)self.dynamicSpecifiers[@"gesturebuttonselection"] setProperty:@YES forKey:@"enabled"];
-            [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"gesturebuttonselection"] animated:NO];
-        }else{
-            [(PSSpecifier *)self.dynamicSpecifiers[@"gesturebuttonselection"] setProperty:@NO forKey:@"enabled"];
-            [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"gesturebuttonselection"] animated:NO];
-        }
-    }else if([key isEqualToString:@"dockmode"]){
-        if ([value intValue] < 3){
-            [(PSSpecifier *)self.dynamicSpecifiers[@"gesturebuttonselection"] setProperty:@YES forKey:@"enabled"];
-            [(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] setProperty:@YES forKey:@"enabled"];
-            [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"gesturebuttonselection"] animated:NO];
-            [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] animated:NO];
-        }else{
-            [(PSSpecifier *)self.dynamicSpecifiers[@"gesturebuttonselection"] setProperty:@NO forKey:@"enabled"];
-            [(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] setProperty:@NO forKey:@"enabled"];
-            [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"gesturebuttonselection"] animated:NO];
-            [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] animated:NO];
-        }
-    }else if([key isEqualToString:@"gesturebutton"]){
-        if ([value intValue] > 0 && [[specifier propertyForKey:@"enabled"] boolValue]){
-            [(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] setProperty:@YES forKey:@"enabled"];
-            [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] animated:NO];
-        }else{
-            [(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] setProperty:@NO forKey:@"enabled"];
-            [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] animated:NO];
-        }
     }
     return value;
 }
@@ -170,44 +107,12 @@ static NSBundle *tweakBundle;
 
 - (void)setPreferenceValue:(id)value specifier:(PSSpecifier *)specifier{
     NSString *key = [specifier propertyForKey:@"key"];
-    if ([key isEqualToString:kEnabledkey]) {
-        // PSSwitchCell on iOS 17 can return its plist default while the
-        // preference daemon is still synchronizing.  Write through the same
-        // manager used by SpringBoard so the value is immediately observable.
+    if (key.length > 0) {
+        // Keep PreferenceLoader UI writes on the same CFPreferences/plist path
+        // used by SpringBoard and the keyboard process.
         [[DXPrefsManager sharedInstance] setValue:value forKey:key];
     } else {
         [super setPreferenceValue:value specifier:specifier];
-    }
-    if([key isEqualToString:@"toastBOOL"]) {
-        [(PSSpecifier *)self.dynamicSpecifiers[@"pyslider"] setProperty:value forKey:@"enabled"];
-        [(PSSpecifier *)self.dynamicSpecifiers[@"timerslider"] setProperty:value forKey:@"enabled"];
-        [(PSSpecifier *)self.dynamicSpecifiers[@"displaytypeselection"] setProperty:value forKey:@"enabled"];
-        [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"pyslider"] animated:NO];
-        [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"timerslider"] animated:NO];
-        [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"displaytypeselection"] animated:NO];
-    }else if([key isEqualToString:@"enabledSpaceBarScrollingBOOL"]){
-        [(PSSpecifier *)self.dynamicSpecifiers[@"granularityslider"] setProperty:value forKey:@"enabled"];
-        [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"granularityslider"] animated:NO];
-    }else if([key isEqualToString:@"dockmode"]){
-        if ([value intValue] < 3){
-            [(PSSpecifier *)self.dynamicSpecifiers[@"gesturebuttonselection"] setProperty:@YES forKey:@"enabled"];
-            [(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] setProperty:@YES forKey:@"enabled"];
-            [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"gesturebuttonselection"] animated:NO];
-            [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] animated:NO];
-        }else{
-            [(PSSpecifier *)self.dynamicSpecifiers[@"gesturebuttonselection"] setProperty:@NO forKey:@"enabled"];
-            [(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] setProperty:@NO forKey:@"enabled"];
-            [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"gesturebuttonselection"] animated:NO];
-            [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] animated:NO];
-        }
-    }else if([key isEqualToString:@"gesturebutton"]){
-        if ([value intValue] > 0 && [[specifier propertyForKey:@"enabled"] boolValue]){
-            [(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] setProperty:@YES forKey:@"enabled"];
-            [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] animated:NO];
-        }else{
-            [(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] setProperty:@NO forKey:@"enabled"];
-            [self reloadSpecifier:(PSSpecifier *)self.dynamicSpecifiers[@"gesturetypeselection"] animated:NO];
-        }
     }
 }
 

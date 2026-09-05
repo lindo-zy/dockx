@@ -181,5 +181,4 @@ typedef NS_ENUM(NSInteger, direction) {
 -(void)runCommand:(NSString *)cmd;
 -(BOOL)isValidURL:(NSString *)urlString;
 
-- (void)activateShootingStarActions:(UIButton *)sender;
 @end

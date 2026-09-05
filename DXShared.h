@@ -29,7 +29,6 @@ extern BOOL shouldPerformBatchUpdate;
 extern NSString *key;
 extern BOOL isDraggedGesture;
 extern UIKeyboardDockView *dockV;
-extern BOOL isPossibleDraggingForShootingStar;
 extern BOOL isPagingEnabled;
 extern BOOL useShortenedLabel;
 extern NSBundle *tweakBundle;

@@ -44,40 +44,33 @@
 }
 
 -(NSDictionary *)readPrefs:(NSString *)name withUserInfo:(NSDictionary *)userInfo{
-    CFStringRef appID = (CFStringRef)kIdentifier;
-    CFPreferencesAppSynchronize(appID);
-    CFArrayRef keyList = CFPreferencesCopyKeyList(appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-    if (!keyList) {
-        return @{};
-    }
-    NSDictionary *dictionary = (NSDictionary *)CFBridgingRelease(CFPreferencesCopyMultiple(keyList, appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost));
-    CFRelease(keyList);
-    return dictionary;
+    return [[DXPrefsManager sharedInstance] readPrefs];
 }
 
 -(NSDictionary *)writePrefs:(NSString *)name withUserInfo:(NSDictionary *)userInfo{
-    CFStringRef appID = (CFStringRef)kIdentifier;
-    CFPreferencesSetMultiple((__bridge CFDictionaryRef)userInfo, nil, appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-    CFPreferencesAppSynchronize(appID);
-    //[self postChangedNotification];
+    [[DXPrefsManager sharedInstance] writePrefs:userInfo];
     return nil;
 }
 
 -(NSDictionary *)setValue:(NSString *)name withUserInfo:(NSDictionary *)userInfo{
-    CFPreferencesSetAppValue((CFStringRef)userInfo[@"key"], (CFPropertyListRef)userInfo[@"value"], (CFStringRef)kIdentifier);
-    CFPreferencesAppSynchronize((CFStringRef)kIdentifier);
-    //[self postChangedNotification];
+    NSString *key = userInfo[@"key"];
+    if ([key isKindOfClass:[NSString class]]) {
+        [[DXPrefsManager sharedInstance] setValue:userInfo[@"value"] forKey:key];
+    }
     return nil;
 }
 
 -(NSDictionary *)getValueForKey:(NSString *)name withUserInfo:(NSDictionary *)userInfo{
-    CFStringRef appID = (CFStringRef)kIdentifier;
-    CFPreferencesAppSynchronize(appID);
-    return @{@"value":CFBridgingRelease(CFPreferencesCopyAppValue((CFStringRef)userInfo[@"key"], appID))};
+    NSString *key = userInfo[@"key"];
+    id value = [key isKindOfClass:[NSString class]] ? [[DXPrefsManager sharedInstance] getValueForKey:key] : nil;
+    return value ? @{@"value": value} : @{};
 }
 
 -(NSDictionary *)removeKey:(NSString *)name withUserInfo:(NSDictionary *)userInfo{
-    [self setValue:nil withUserInfo:userInfo];
+    NSString *key = userInfo[@"key"];
+    if ([key isKindOfClass:[NSString class]]) {
+        [[DXPrefsManager sharedInstance] removeKey:key];
+    }
     return nil;
 }
 

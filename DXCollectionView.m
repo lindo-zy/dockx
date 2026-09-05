@@ -3544,30 +3544,16 @@
     }
 }
 
-- (void)activateShootingStarActions:(UIButton *)sender {
-    self.isWordSender = YES;
-    [self activateLPActions:(UIGestureRecognizer *)sender];
-    self.isWordSender = NO;
-    
-    //[self shakeButton:sender];
-}
-
 -(void)activateLPActions:(UIGestureRecognizer *)recognizer{
     //HBLogDebug(@"recognizer: %@", recognizer);
     BOOL isDoubleTap = [recognizer isKindOfClass:objc_getClass("UITapGestureRecognizer")];
-    BOOL isShootingStarSender = [recognizer isKindOfClass:objc_getClass("UIButton")];
     
-    if (recognizer.state == UIGestureRecognizerStateBegan || (isDoubleTap && recognizer.state == UIGestureRecognizerStateEnded) || isShootingStarSender) {
+    if (recognizer.state == UIGestureRecognizerStateBegan || (isDoubleTap && recognizer.state == UIGestureRecognizerStateEnded)) {
         [self autoPaginationControl];
         //HBLogDebug(@"########## REG: %@", NSStringFromCGPoint([recognizer locationInView:recognizer.view.window]));
         
         //HBLogDebug(@"recognizer: %@", recognizer);
-        UIButton *btn;
-        if (isShootingStarSender){
-            btn = (UIButton*)recognizer;
-        }else{
-            btn = (UIButton*)(recognizer.view);
-        }
+        UIButton *btn = (UIButton *)(recognizer.view);
         BOOL doubleTapEnabled = preferencesBool(kEnabledDoubleTapkey, NO);
         NSArray *targetsForLongPressUsingGesture;
         
@@ -3589,7 +3575,7 @@
         for (id target in sets) {
             NSArray *actions;
             HBLogDebug(@"00000000000000000000000000");
-            if ((doubleTapEnabled  && isShootingStarSender) || (doubleTapEnabled  && !isShootingStarSender)){
+            if (doubleTapEnabled){
                 actions = @[NSStringFromSelector([(UIGestureRecognizerTarget *)target action])];
             }else{
                 actions = [btn actionsForTarget:target forControlEvent:UIControlEventTouchUpInside];
@@ -3598,7 +3584,6 @@
                 HBLogDebug(@"######## action: %@", action);
                 int gestureType = 0;
                 if (isDoubleTap) gestureType = 1;
-                if (isShootingStarSender) gestureType = 2;
                 NSString *selectorName1 = preferencesSelectorForIdentifier(action, 1, gestureType, @"");
                 NSString *selectorName2 = preferencesSelectorForIdentifier(action, 2, gestureType, @"");
                 HBLogDebug(@"selectorName1: %@", selectorName1);
@@ -3629,8 +3614,6 @@
                     BOOL isLP = NO;
                     if (isDoubleTap){
                         originalSelectorName = [action stringByReplacingOccurrencesOfString:@"Action:" withString:@"ActionDT:"];
-                    }else if (isShootingStarSender){
-                        originalSelectorName = [action stringByReplacingOccurrencesOfString:@"Action:" withString:@"ActionST:"];
                     }else{
                         [self autoPaginationControl];
                         isLP = YES;
@@ -3777,7 +3760,6 @@
     longPress.minimumPressDuration = 0.5;
     
     BOOL doubleTapEnabled = preferencesBool(kEnabledDoubleTapkey, NO);
-    BOOL shootingStarEnabled = preferencesBool(kEnabledShootingStarkey, NO);
     
     DXUIShortTapGestureRecognizer *singleTap;
     DXUIShortTapGestureRecognizer *doubleTap;
@@ -3794,10 +3776,6 @@
         cell.btn.gestureRecognizers = @[longPress];
     }
     
-    if (shootingStarEnabled){
-        [[NSNotificationCenter defaultCenter] removeObserver:cell];
-        [[NSNotificationCenter defaultCenter] addObserver:cell selector:@selector(shakeCell:) name:[NSString stringWithFormat:@"shakeCell-%@", selectorName] object:nil];
-    }
     //SEL selectorLP = NSSelectorFromString(((NSArray *)_shortcuts[kselectorsLP])[cellIndex]);
     
     
