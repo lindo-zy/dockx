@@ -157,15 +157,9 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          
-          # 确保在 git 仓库中
-          if [ ! -d ".git" ]; then
-            git init
-            git config user.email "actions@github.com"
-            git config user.name "GitHub Actions"
-          fi
           
           tag="${GITHUB_REF_NAME}"
           assets=(release-assets/*.deb)
@@ -180,12 +174,12 @@ jobs:
           echo "Assets to upload: ${assets[@]}"
           
           # 检查发布版本是否存在，然后创建或更新
-          if gh release view "$tag" >/dev/null 2>&1; then
+          if gh release view "$tag" --repo "$GH_REPO" >/dev/null 2>&1; then
             echo "Updating existing release: $tag"
-            gh release upload "$tag" "${assets[@]}" --clobber
+            gh release upload "$tag" "${assets[@]}" --repo "$GH_REPO" --clobber
           else
             echo "Creating new release: $tag"
-            gh release create "$tag" "${assets[@]}" \
+            gh release create "$tag" "${assets[@]}" --repo "$GH_REPO" \
               --title "DockX $tag" \
               --generate-notes
           fi
@@ -222,15 +216,16 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           prerelease_tag="main-latest"
           assets=(release-assets/*.deb)
           
-          if gh release view "$prerelease_tag" >/dev/null 2>&1; then
-            gh release upload "$prerelease_tag" "${assets[@]}" --clobber
+          if gh release view "$prerelease_tag" --repo "$GH_REPO" >/dev/null 2>&1; then
+            gh release upload "$prerelease_tag" "${assets[@]}" --repo "$GH_REPO" --clobber
           else
-            gh release create "$prerelease_tag" "${assets[@]}" \
+            gh release create "$prerelease_tag" "${assets[@]}" --repo "$GH_REPO" \
               --title "DockX Development Build" \
               --prerelease \
               --generate-notes
